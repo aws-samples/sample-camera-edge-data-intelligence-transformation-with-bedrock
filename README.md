@@ -66,6 +66,14 @@
 | KVS直接 | 組込カメラ(例) | 送信元の実装により、直接KVSに映像を送信する | KVS (HLS) |
 | S3 | 組込カメラ(例) | 送信元の実装により、直接S3に映像(動画/画像)を送信する	<br> | S3 Bucket (File) |
 
+#### RTMPカメラの要件
+- コーデックは H.264のみ。解像度上限、フレームレート、ビットレート上限は Kiniesis Video Streamに依存。論理値としては、解像度4K、最大フレームレート60fps、最大ビットレート100Mbpsとなります (2026-2-10時点)が、現実的には映像を処理するCamera Mangement の ECSサービスのスペックに依存します。音声は現状破棄されます。
+- Collectorでレコーダー機能を使う場合、レコーダーを動作させるECSサービスのメモリの問題により、現状は解像度は720p程度までしか対応出来ません。より高解像度の映像の画像/動画切り出しをする場合はメモリを増加してください。
+
+#### RTSPカメラの要件
+- コーデックは H.264のみ。解像度上限、フレームレート、ビットレート上限は Kiniesis Video Streamに依存。論理値としては、解像度4K、最大フレームレート60fps、最大ビットレート100Mbpsとなります (2026-2-10時点)が、現実的には映像を処理するCamera Mangement の ECSサービスのスペックに依存します。音声は現状破棄されます。
+- Collectorでレコーダー機能を使う場合、レコーダーを動作させるECSサービスのメモリの問題により、現状は解像度は720p程度までしか対応出来ません。より高解像度の映像の画像/動画切り出しをする場合はメモリを増加してください。
+
 #### テスト動画機能について
 - AWS側から、RTSPカメラに直接接続をするパターンをテストするには、RTSPカメラが設置してあるルーターのポート開放などが必要
 
@@ -132,10 +140,10 @@ Amazon Bedrockの生成AIモデルを利用して、映像解析およびタグ�
     - https://docs.aws.amazon.com/nova/latest/nova2-userguide/using-multimodal-models.html#video-understanding
 - 設定時の注意
   - ファイルタイプとトリガーイベントを間違えて設定すると何も検出しません。
-  [Detectorの検出結果を確認できる画面]
-  ![1770569003328.png](doc/image/1770569003328.png)
-  [Detector設定画面]
-  ![1770568419425.png](doc/image/1770568419425.png)
+[Detectorの検出結果を確認できる画面]
+![1770569003328.png](doc/image/1770569003328.png)
+[Detector設定画面]
+![1770568419425.png](doc/image/1770568419425.png)
 #### 拡張する場合のアイデア
 - Detector機能は、EventBridgeのRule駆動で動くLambdaで動作をしています。
 - そのため、独自のLambdaを実装し、save_image  save_video  class_detect area_detect のイベント駆動で動作させれば、独自のDetectorを追加できます。
@@ -326,4 +334,3 @@ cd infrastructure/cdk
 
 ## LICENSE
 [LICENSE](LICENSE) をご確認ください
-
