@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RTSP Receiver用CloudFormationテンプレート
+
+Parameters:
+  CameraId:
+    Type: String
+    Default: camera001
+    Description: カメラID（ECSタスク用）
+  RtspReceiverRepositoryUri:
+    Type: String
+    Description: RTSP Receiver ECRリポジトリURI（別テンプレートでデプロイ済）
+  EcsTaskRoleArn:
+    Type: String
+    Description: ECSタスクロールのARN（別テンプレートでデプロイ済）
+  EcsTaskExecutionRoleArn:
+    Type: String
+    Description: ECSタスク実行ロールのARN（別テンプレートでデプロイ済）
+  CollectorSecurityGroupId:
+    Type: String
+    Description: コレクターセキュリティグループのID（別テンプレートでデプロイ済）
+  CameraClusterName:
+    Type: String
+    Description: カメラECSクラスター名（別テンプレートでデプロイ済）
+  PrivateSubnet1Id:
+    Type: String
+    Description: プライベートサブネット1のID（別テンプレートでデプロイ済）
+  PrivateSubnet2Id:
+    Type: String
+    Description: プライベートサブネット2のID（別テンプレートでデプロイ済）
+  StreamName:
+    Type: String
+    Description: Kinesis Video Stream名
+  RtspUrl:
+    Type: String
+    Description: RTSP入力URL
+  RetentionPeriod:
+    Type: String
+    Default: "24"
+    Description: KVSストリーム保持期間（時間）
+  FragmentDuration:
+    Type: String
+    Default: "500"
+    Description: フラグメント持続時間（ミリ秒）
+  StorageSize:
+    Type: String
+    Default: "512"
+    Description: ローカルストレージサイズ（MB）
+  GstreamerLogMode:
+    Type: String
+    Description: GStreamerログ出力モード（stdout or null）
+  LogsKmsKeyArn:
+    Type: String
+    Description: CloudWatch Logs暗号化用KMS Key ARN
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        PYTHONPATH: /var/task
+
+Resources:
+  # Kinesis Video Stream
+  KinesisVideoStream:
+    Type: AWS::KinesisVideo::Stream
+    Properties:
+      Name: !Ref StreamName
+      DataRetentionInHours: !Ref RetentionPeriod
+      MediaType: video/h264
+      Tags:
+        - Key: CameraId
+          Value: !Ref CameraId
+        - Key: Purpose
+          Value: RTSP-Receiver-Stream
+
+  # ECS タスク定義
+  RtspReceiverTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Metadata:
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-ECS2
+            reason: "環境変数にはセンシティブデータは含まれず、設定値(AWS_REGION, STREAM_NAME等)のみ"
+    Properties:
+      Family: !Sub "${CameraId}-rtsp-receiver-task"
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: !Ref EcsTaskExecutionRoleArn
+      TaskRoleArn: !Ref EcsTaskRoleArn
+      ContainerDefinitions:
+        - Name: !Sub "${CameraId}-rtsp-receiver-container"
+          Image: !Ref RtspReceiverRepositoryUri
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref RtspReceiverLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: rtsp-receiver
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: STREAM_NAME
+              Value: !Ref StreamName
+            - Name: RTSP_URL
+              Value: !Ref RtspUrl
+            - Name: RETENTION_PERIOD
+              Value: !Ref RetentionPeriod
+            - Name: FRAGMENT_DURATION
+              Value: !Ref FragmentDuration
+            - Name: STORAGE_SIZE
+              Value: !Ref StorageSize
+            - Name: GSTREAMER_LOG_MODE
+              Value: !Ref GstreamerLogMode
+
+  # ECS サービス
+  RtspReceiverService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${CameraId}-rtsp-receiver-service"
+      Cluster: !Ref CameraClusterName
+      TaskDefinition: !Ref RtspReceiverTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      # ============================================================
+      # 🔧 デバッグ用: ECS Exec有効化
+      # 本番環境では削除すること（セキュリティリスクのため）
+      # aws ecs execute-command でコンテナ内部にログインできるようにするための設定
+      # ============================================================
+      EnableExecuteCommand: true
+      # ============================================================
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref CollectorSecurityGroupId
+          Subnets:
+            - !Ref PrivateSubnet1Id
+            - !Ref PrivateSubnet2Id
+      ServiceConnectConfiguration:
+        Enabled: true
+      Tags:
+        - Key: Description
+          Value: Service for RTSP to KVS streaming
+
+  # CloudWatch ロググループ
+  RtspReceiverLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${CameraId}-rtsp-receiver"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  KinesisVideoStreamArn:
+    Description: ARN of the created Kinesis Video Stream
+    Value: !GetAtt KinesisVideoStream.Arn
+  KinesisVideoStreamName:
+    Description: Name of the created Kinesis Video Stream
+    Value: !Ref KinesisVideoStream
+  RtspReceiverTaskDefinitionArn:
+    Description: ARN of the RTSP Receiver Task Definition
+    Value: !Ref RtspReceiverTaskDefinition
+  RtspReceiverServiceName:
+    Description: Name of the RTSP Receiver Service
+    Value: !Ref RtspReceiverService

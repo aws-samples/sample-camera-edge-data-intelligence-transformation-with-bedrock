@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: S3+YOLO画像検出用CloudFormationテンプレート
+
+Parameters:
+  CameraId:
+    Type: String
+    Default: cam-001
+    Description: カメラID
+  CollectorId:
+    Type: String
+    Description: コレクターID
+  SourceS3BucketName:
+    Type: String
+    Description: 監視対象のS3バケット名
+  BucketName:
+    Type: String
+    Description: 保存先のS3バケット名（メインスタックから取得）
+  S3YoloRepositoryUri:
+    Type: String
+    Description: S3Yolo ECRリポジトリURI
+  LambdaRoleArn:
+    Type: String
+    Description: Lambda実行ロールのARN（Foundation Stackで事前作成済み）
+  LogsKmsKeyArn:
+    Type: String
+    Description: CloudWatch Logs暗号化用KMS Key ARN
+
+Resources:
+  # Lambda関数
+  S3YoloFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: "Lambda実行ロールはFoundation Stackで事前作成済みでCloudWatch Logs権限を含む"
+          - id: W89
+            reason: "このLambdaはVPC内リソースへのアクセスが不要なため、VPC外にデプロイ"
+      checkov:
+        skip:
+          - id: CKV_AWS_116
+            comment: "DLQは本システムでは不要。失敗時はCloudWatch Logsで確認"
+          - id: CKV_AWS_173
+            comment: "環境変数に機密情報なし（カメラID、コレクターID、バケット名のみ）"
+          - id: CKV_AWS_117
+            comment: "VPC配置不要。外部APIアクセスのみで内部リソースへのアクセスなし"
+    Properties:
+      FunctionName: !Sub "${CollectorId}-function"
+      PackageType: Image
+      ImageUri: !Ref S3YoloRepositoryUri
+      Role: !Ref LambdaRoleArn
+      MemorySize: 3008  # YOLO推論に必要
+      Timeout: 300
+      ReservedConcurrentExecutions: 10  # YOLO処理は重いため同時実行を制限
+      Environment:
+        Variables:
+          CAMERA_ID: !Ref CameraId
+          COLLECTOR_ID: !Ref CollectorId
+          BUCKET_NAME: !Ref BucketName
+
+  # EventBridge Rule for S3 Object Created (画像のみ)
+  S3ImageCreatedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${CollectorId}-rule"
+      Description: !Sub "Trigger S3Yolo Lambda when images are created in ${SourceS3BucketName}"
+      EventPattern: !Sub |
+        {
+          "source": ["aws.s3"],
+          "detail-type": ["Object Created"],
+          "detail": {
+            "bucket": {
+              "name": ["${SourceS3BucketName}"]
+            },
+            "object": {
+              "key": [
+                {"prefix": "endpoint/${CameraId}/"}
+              ]
+            }
+          }
+        }
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt S3YoloFunction.Arn
+          Id: "S3YoloTarget"
+
+  # Lambda permission for EventBridge
+  S3YoloEventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref S3YoloFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt S3ImageCreatedRule.Arn
+
+  # CloudWatch ロググループ
+  S3YoloLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CollectorId}-function"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  S3YoloFunctionName:
+    Description: Name of the S3Yolo Lambda Function
+    Value: !Ref S3YoloFunction
+  S3YoloFunctionArn:
+    Description: ARN of the S3Yolo Lambda Function
+    Value: !GetAtt S3YoloFunction.Arn
+  S3ImageCreatedRuleName:
+    Description: Name of the S3 Image Created EventBridge Rule
+    Value: !Ref S3ImageCreatedRule
+  S3ImageCreatedRuleArn:
+    Description: ARN of the S3 Image Created EventBridge Rule
+    Value: !GetAtt S3ImageCreatedRule.Arn

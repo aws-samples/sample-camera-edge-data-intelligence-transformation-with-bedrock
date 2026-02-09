@@ -1,0 +1,21 @@
+services:
+  frontend-dev:
+    container_name: vite-frontend-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3000:3000"
+    volumes:
+      # ソースコードをマウントしてホットリロードを有効化
+      - .:/app
+      # node_modulesとビルドディレクトリを除外
+      - /app/node_modules
+      - /app/build
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

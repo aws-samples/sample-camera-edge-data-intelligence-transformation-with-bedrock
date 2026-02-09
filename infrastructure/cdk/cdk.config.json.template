@@ -1,0 +1,6 @@
+{
+  "stackPrefix": "cedix-dev",
+  "region": "ap-northeast-1",
+  "s3AdditionalPrefix": "<any-unique-prefix-for-s3-bucket>"
+}
+

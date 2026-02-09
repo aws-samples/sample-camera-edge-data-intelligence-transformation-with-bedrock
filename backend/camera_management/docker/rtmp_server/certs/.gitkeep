@@ -1,0 +1,2 @@
+# This directory stores TLS certificates for RTMPS
+# Run generate-certs.sh to create self-signed certificates

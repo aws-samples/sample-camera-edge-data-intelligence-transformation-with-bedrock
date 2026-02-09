@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cedix-ingestion-test
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - OPENSEARCH_ENDPOINT=${OPENSEARCH_ENDPOINT}
+      - INDEX_NAME=cedix-detect-log
+      - DLQ_BUCKET=${DLQ_BUCKET:-test-bucket}
+      - DLQ_PREFIX=dlqs/lambda/
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
+    volumes:
+      - ./test:/test
+      - ./lambda_function.py:/var/task/lambda_function.py
+      - ./opensearch_client.py:/var/task/opensearch_client.py
+      - ./dynamodb_converter.py:/var/task/dynamodb_converter.py
+    command: tail -f /dev/null
+

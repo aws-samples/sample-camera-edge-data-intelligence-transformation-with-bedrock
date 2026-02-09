@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: api_gateway/Dockerfile.dev
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8000:8000"
+    environment:
+      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
+      - COGNITO_REGION=${COGNITO_REGION}
+      - AUTH_MODE=${AUTH_MODE:-middleware}
+      - DEPLOY_MODE=${DEPLOY_MODE:-production}
+      - CAMERA_RESOURCE_DEPLOY=${CAMERA_RESOURCE_DEPLOY:-off}
+      - COLLECTION_RESOURCE_DEPLOY=${COLLECTION_RESOURCE_DEPLOY:-off}
+      - DETECTOR_RESOURCE_DEPLOY=${DETECTOR_RESOURCE_DEPLOY:-off}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - AWS_PROFILE=default
+      - AWS_STACK_NAME=${AWS_STACK_NAME}
+      - CLOUDFRONT_DOMAIN=${CLOUDFRONT_DOMAIN}
+      - CLOUDFRONT_KEY_PAIR_ID=${CLOUDFRONT_KEY_PAIR_ID}
+      - CLOUDFRONT_SECRET_NAME=${CLOUDFRONT_SECRET_NAME}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - AOSS_COLLECTION_ENDPOINT=${AOSS_COLLECTION_ENDPOINT}
+    volumes:
+      - ~/.aws/credentials:/home/appuser/.aws/credentials:ro
+      - ~/.aws/config:/home/appuser/.aws/config:ro
+      # Mount API Gateway code for hot reload
+      - .:/var/task/api_gateway
+      # Mount all backend modules for development
+      - ../shared:/var/task/shared:ro
+      - ../camera_management:/var/task/camera_management:ro
+      - ../place:/var/task/place:ro
+      - ../collector:/var/task/collector:ro
+      - ../detector:/var/task/detector:ro
+      - ../analytics:/var/task/analytics:ro
+      - ../test_movie:/var/task/test_movie:ro
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge 

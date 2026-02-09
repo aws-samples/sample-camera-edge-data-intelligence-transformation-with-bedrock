@@ -1,0 +1,21 @@
+# BoT-SORT トラッキング設定
+tracker_type: botsort
+
+# トラッキング閾値
+track_high_thresh: 0.5       # 高信頼度検出保存閾値
+track_low_thresh: 0.3        # 低信頼度検出残存閾値
+new_track_thresh: 0.6        # 新規トラック生成閾値
+track_buffer: 30             # 最大フレームバッファ数（約1秒分）
+match_thresh: 0.8            # IoUマッチ閾値
+proximity_thresh: 0.5        # 空間近接マッチ閾値
+
+# ReID設定
+with_reid: false             # ReID機能（CPU版では無効化推奨）
+appearance_thresh: 0.25      # ReID特徴マッチ閾値
+
+# カメラモーション補償設定（Ultralytics 8.3+で必須）
+gmc_method: sparseOptFlow    # グローバルモーション補償方法（sparseOptFlow, orb, ecc, none）
+
+# スコア融合設定（Ultralytics 8.3+で必須）
+fuse_score: true             # 検出スコアとトラックスコアを融合
+

@@ -1,0 +1,21 @@
+services:
+  rtmp-kvs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "1935:1935"   # RTMP
+      - "1936:1936"   # RTMPS
+    env_file:
+      - .env
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - STREAM_NAME=${STREAM_NAME}
+      - RETENTION_PERIOD=${RETENTION_PERIOD:-24}
+      - FRAGMENT_DURATION=${FRAGMENT_DURATION:-2000}
+      - STORAGE_SIZE=${STORAGE_SIZE:-512}
+    volumes:
+      - ./certs:/app/certs:ro
+    restart: unless-stopped

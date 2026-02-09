@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "fetchCamerasFailed": "カメラデータの取得に失敗しました。",
+    "fetchPlacesFailed": "場所データの取得に失敗しました。",
+    "fetchBookmarksFailed": "ブックマーク一覧の取得に失敗しました。",
+    "addBookmarkFailed": "ブックマーク詳細の追加に失敗しました。",
+    "createBookmarkFailed": "新しいブックマークの作成に失敗しました。",
+    "networkError": "ネットワークエラーが発生しました。",
+    "unknownError": "エラーが発生しました。",
+    "requiredField": "この項目は必須です。",
+    "invalidInput": "入力が無効です。"
+  },
+  "success": {
+    "saved": "保存しました",
+    "deleted": "削除しました",
+    "updated": "更新しました",
+    "created": "作成しました",
+    "bookmarkAdded": "ブックマークに追加しました"
+  },
+  "confirm": {
+    "delete": "本当に削除しますか？",
+    "discard": "変更を破棄しますか？"
+  },
+  "validation": {
+    "enterBookmarkName": "ブックマーク名を入力してください",
+    "enterCameraName": "カメラ名を入力してください",
+    "enterPlaceName": "場所名を入力してください"
+  }
+}
+

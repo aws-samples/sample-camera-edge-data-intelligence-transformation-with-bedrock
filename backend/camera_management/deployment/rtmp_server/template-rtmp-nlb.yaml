@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: RTMP NLB CloudFormation Template (Shared NLB for multiple RTMP servers)
+
+Parameters:
+  NlbId:
+    Type: String
+    Description: Unique ID for this NLB (e.g., rtmp-nlb-001)
+  PublicSubnet1Id:
+    Type: String
+    Description: Public subnet 1 ID
+  PublicSubnet2Id:
+    Type: String
+    Description: Public subnet 2 ID
+  VpcId:
+    Type: String
+    Description: VPC ID
+  PortRangeStart:
+    Type: Number
+    Default: 1935
+    Description: Start port for this NLB (e.g., 1935, 1985, 2035...)
+  PortRangeEnd:
+    Type: Number
+    Default: 1984
+    Description: End port for this NLB (50 ports per NLB)
+  AllowedCidr:
+    Type: String
+    Default: "0.0.0.0/0"
+    Description: Allowed CIDR for RTMP access
+  AccessLogsBucketName:
+    Type: String
+    Description: S3 bucket name for NLB access logs
+  AccessLogsBucketPrefix:
+    Type: String
+    Description: S3 prefix for NLB access logs
+    Default: "nlb-access-logs"
+
+Resources:
+  # RTMP NLB Security Group
+  RtmpNlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for shared RTMP NLB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref PortRangeStart
+          ToPort: !Ref PortRangeEnd
+          CidrIp: !Ref AllowedCidr
+          Description: RTMP inbound from allowed CIDR
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub "${NlbId}-sg"
+        - Key: Purpose
+          Value: RTMP-NLB-SecurityGroup
+
+  # Network Load Balancer (Shared)
+  RtmpNetworkLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Ref NlbId
+      Type: network
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1Id
+        - !Ref PublicSubnet2Id
+      # Access logs configuration (always enabled, using ZeroETL bucket by default)
+      LoadBalancerAttributes:
+        - Key: access_logs.s3.enabled
+          Value: 'true'
+        - Key: access_logs.s3.bucket
+          Value: !Ref AccessLogsBucketName
+        - Key: access_logs.s3.prefix
+          Value: !Sub "${AccessLogsBucketPrefix}/${NlbId}"
+      Tags:
+        - Key: NlbId
+          Value: !Ref NlbId
+        - Key: Purpose
+          Value: RTMP-Shared-NLB
+        - Key: PortRangeStart
+          Value: !Ref PortRangeStart
+        - Key: PortRangeEnd
+          Value: !Ref PortRangeEnd
+
+Outputs:
+  NlbArn:
+    Description: ARN of the Network Load Balancer
+    Value: !Ref RtmpNetworkLoadBalancer
+    Export:
+      Name: !Sub "${NlbId}-NlbArn"
+  NlbDnsName:
+    Description: DNS name of the Network Load Balancer
+    Value: !GetAtt RtmpNetworkLoadBalancer.DNSName
+    Export:
+      Name: !Sub "${NlbId}-NlbDnsName"
+  SecurityGroupId:
+    Description: Security Group ID for the NLB
+    Value: !Ref RtmpNlbSecurityGroup
+    Export:
+      Name: !Sub "${NlbId}-SecurityGroupId"
+  PortRangeStart:
+    Description: Start port for this NLB
+    Value: !Ref PortRangeStart
+  PortRangeEnd:
+    Description: End port for this NLB
+    Value: !Ref PortRangeEnd

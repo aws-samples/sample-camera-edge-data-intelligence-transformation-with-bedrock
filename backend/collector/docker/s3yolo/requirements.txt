@@ -1,0 +1,13 @@
+# AWS SDK
+boto3>=1.34.0
+
+# Image processing
+Pillow>=10.0.0
+
+# YOLO core dependencies (others will be installed via YOLO's setup.py)
+torch>=2.0.0
+torchvision>=0.15.0
+omegaconf>=2.3.0
+
+# Note: YOLO MIT and its dependencies (wandb, lightning, etc.) 
+# are installed via git clone in Dockerfile (same as hlsyolo)

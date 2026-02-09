@@ -1,0 +1,49 @@
+# ランタイム用Dockerfile（高速）
+# 事前ビルド済みのビルダーイメージを使用（プラットフォーム別タグ対応）
+# checkov:skip=CKV_DOCKER_7:BUILDER_TAG has default version v1.0.0, variable used for multi-platform builds
+ARG BUILDER_TAG=cedix-rtsp-receiver-builder:v1.0.0
+FROM ${BUILDER_TAG} AS builder
+
+FROM debian:12-slim
+
+WORKDIR /app
+
+# ランタイムに必要なパッケージのみインストール
+RUN apt-get update && \
+    apt-get install -y \
+    gstreamer1.0-libav \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools \
+    libgstreamer-plugins-base1.0-dev \
+    procps \
+    curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 非rootユーザーの作成
+RUN groupadd -r kvs && useradd --no-log-init -r -g kvs kvs
+
+# ビルド済みのKVS Producer SDKをコピー
+COPY --from=builder /app/producer /app/producer
+
+# Fargate自動認証ローテーション対応版entrypointを使用
+# COPY entrypoint_fargate_auto.sh /app/producer/build/entrypoint.sh
+COPY camera_management/docker/rtsp_reciver/entrypoint.sh /app/producer/build/entrypoint.sh
+RUN chmod +x /app/producer/build/entrypoint.sh
+
+WORKDIR /app/producer/build
+ENV LD_LIBRARY_PATH=/app/producer/open-source/local/lib
+ENV GST_PLUGIN_PATH=/app/producer/build
+
+# 所有権変更
+RUN chown -R kvs:kvs /app
+
+# ヘルスチェック（entrypoint.shプロセスの稼働確認）
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD pgrep -f "entrypoint.sh" > /dev/null || exit 1
+
+USER kvs
+
+ENTRYPOINT ["/app/producer/build/entrypoint.sh"]

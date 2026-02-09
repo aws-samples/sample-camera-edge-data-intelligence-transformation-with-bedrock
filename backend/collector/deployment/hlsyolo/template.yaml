@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: HLS+YOLO画像取得・トラッキングエンドポイント用CloudFormationテンプレート
+
+Parameters:
+  CameraId:
+    Type: String
+    Default: camera001
+    Description: カメラID（ECSタスク用）
+  CollectorId:
+    Type: String
+    Description: コレクターID
+  HlsYoloRepositoryUri:
+    Type: String
+    Description: HlsYolo ECRリポジトリURI（別テンプレートでデプロイ済）
+  EcsTaskRoleArn:
+    Type: String
+    Description: ECSタスクロールのARN（別テンプレートでデプロイ済）
+  EcsTaskExecutionRoleArn:
+    Type: String
+    Description: ECSタスク実行ロールのARN（別テンプレートでデプロイ済）
+  CollectorSecurityGroupId:
+    Type: String
+    Description: コレクターセキュリティグループのID（別テンプレートでデプロイ済）
+  CameraClusterName:
+    Type: String
+    Description: カメラECSクラスター名（別テンプレートでデプロイ済）
+  PrivateSubnet1Id:
+    Type: String
+    Description: プライベートサブネット1のID（別テンプレートでデプロイ済）
+  PrivateSubnet2Id:
+    Type: String
+    Description: プライベートサブネット2のID（別テンプレートでデプロイ済）
+  BucketName:
+    Type: String
+    Description: S3バケット名（メインスタックから取得）
+  LogsKmsKeyArn:
+    Type: String
+    Description: CloudWatch Logs暗号化用KMS Key ARN
+  EnablePeriodicSave:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: "Enable periodic image saving (default: false)"
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        PYTHONPATH: /var/task
+
+Resources:
+  # ECS タスク定義
+  HlsYoloTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Metadata:
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-ECS2
+            reason: "環境変数にはセンシティブデータは含まれず、設定値(AWS_REGION, CAMERA_ID等)のみ"
+    Properties:
+      Family: !Sub "${CameraId}-${CollectorId}-task"
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: 1024  # YOLOモデル用に増強（256 → 1024）
+      Memory: 2048  # YOLOモデル用に増強（512 → 2048）
+      ExecutionRoleArn: !Ref EcsTaskExecutionRoleArn
+      TaskRoleArn: !Ref EcsTaskRoleArn
+      ContainerDefinitions:
+        - Name: !Sub "${CameraId}-${CollectorId}-container"
+          Image: !Ref HlsYoloRepositoryUri
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref HlsYoloLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: hlsyolo
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: CAMERA_ID
+              Value: !Ref CameraId
+            - Name: COLLECTOR_ID
+              Value: !Ref CollectorId
+            - Name: BUCKET_NAME
+              Value: !Ref BucketName
+            - Name: ENABLE_PERIODIC_SAVE
+              Value: !Ref EnablePeriodicSave
+
+  # ECS サービス
+  HlsYoloService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${CameraId}-${CollectorId}-service"
+      Cluster: !Ref CameraClusterName
+      TaskDefinition: !Ref HlsYoloTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref CollectorSecurityGroupId
+          Subnets:
+            - !Ref PrivateSubnet1Id
+            - !Ref PrivateSubnet2Id
+      ServiceConnectConfiguration:
+        Enabled: true
+      Tags:
+        - Key: Description
+          Value: Service for HLS+YOLO image download and tracking
+
+  # CloudWatch ロググループ
+  HlsYoloLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${CameraId}-${CollectorId}"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  HlsYoloTaskDefinitionArn:
+    Description: ARN of the HlsYolo Task Definition
+    Value: !Ref HlsYoloTaskDefinition
+  HlsYoloServiceName:
+    Description: Name of the HlsYolo Service
+    Value: !Ref HlsYoloService
+

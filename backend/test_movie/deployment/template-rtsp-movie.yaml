@@ -1,0 +1,168 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RTSP Movie用CloudFormationテンプレート
+
+Parameters:
+  CameraId:
+    Type: String
+    Default: camera001
+    Description: カメラID（ECSタスク用）
+  RtspMovieRepositoryUri:
+    Type: String
+    Description: RTSP Movie ECRリポジトリURI（別テンプレートでデプロイ済）
+  EcsTaskRoleArn:
+    Type: String
+    Description: ECSタスクロールのARN（別テンプレートでデプロイ済）
+  EcsTaskExecutionRoleArn:
+    Type: String
+    Description: ECSタスク実行ロールのARN（別テンプレートでデプロイ済）
+  CollectorSecurityGroupId:
+    Type: String
+    Description: コレクターセキュリティグループのID（別テンプレートでデプロイ済）
+  CameraClusterName:
+    Type: String
+    Description: カメラECSクラスター名（別テンプレートでデプロイ済）
+  PrivateSubnet1Id:
+    Type: String
+    Description: プライベートサブネット1のID（別テンプレートでデプロイ済）
+  PrivateSubnet2Id:
+    Type: String
+    Description: プライベートサブネット2のID（別テンプレートでデプロイ済）
+  MovieS3Path:
+    Type: String
+    Description: テスト動画のS3パス
+  CameraBucket:
+    Type: String
+    Description: カメラ用S3バケット名（別テンプレートでデプロイ済）
+  LogsKmsKeyArn:
+    Type: String
+    Description: CloudWatch Logs暗号化用KMS Key ARN
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        PYTHONPATH: /var/task
+
+Resources:
+  # S3アクセス用のIAMポリシー
+  RtspMovieS3Policy:
+    Type: AWS::IAM::Policy
+    Metadata:
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-IAM5
+            reason: "Wildcard required for test-movies/* prefix - file names are dynamically generated"
+    Properties:
+      PolicyName: !Sub "${CameraId}-rtsp-movie-s3-policy"
+      Roles:
+        - !Select [1, !Split ['/', !Ref EcsTaskRoleArn]]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource:
+              # test-movies/ プレフィックスに限定（最小権限の原則）
+              - !Sub "arn:aws:s3:::${CameraBucket}/test-movies/*"
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${CameraBucket}"
+            Condition:
+              StringLike:
+                s3:prefix:
+                  - "test-movies/*"
+
+  # ECS タスク定義
+  RtspMovieTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Metadata:
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-ECS2
+            reason: "環境変数にはセンシティブデータは含まれず、設定値(AWS_REGION, MOVIE_PATH)のみ"
+    Properties:
+      Family: !Sub "${CameraId}-rtsp-movie-task"
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: 4096
+      Memory: 8192
+      ExecutionRoleArn: !Ref EcsTaskExecutionRoleArn
+      TaskRoleArn: !Ref EcsTaskRoleArn
+      ContainerDefinitions:
+        - Name: !Sub "${CameraId}-rtsp-movie-container"
+          Image: !Ref RtspMovieRepositoryUri
+          Essential: true
+          PortMappings:
+            - Name: !Sub "${CameraId}-rtsp-movie"
+              ContainerPort: 8554
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref RtspMovieLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: rtsp-movie
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: MOVIE_PATH
+              Value: !Ref MovieS3Path
+
+  # ECS サービス
+  RtspMovieService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${CameraId}-rtsp-movie-service"
+      Cluster: !Ref CameraClusterName
+      TaskDefinition: !Ref RtspMovieTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref CollectorSecurityGroupId
+          Subnets:
+            - !Ref PrivateSubnet1Id
+            - !Ref PrivateSubnet2Id
+      ServiceConnectConfiguration:
+        Enabled: true
+        Services:
+          - PortName: !Sub "${CameraId}-rtsp-movie"
+            DiscoveryName: !Sub "${CameraId}-rtsp-movie"
+            ClientAliases:
+              - Port: 8554
+                DnsName: !Sub "${CameraId}-rtsp-movie"
+      Tags:
+        - Key: Description
+          Value: Service for RTSP Movie streaming
+
+  # CloudWatch ロググループ
+  RtspMovieLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${CameraId}-rtsp-movie"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  RtspMovieTaskDefinitionArn:
+    Description: ARN of the RTSP Movie Task Definition
+    Value: !Ref RtspMovieTaskDefinition
+  RtspMovieServiceName:
+    Description: Name of the RTSP Movie Service
+    Value: !Ref RtspMovieService
+  RtspUrl:
+    Description: RTSP URL for accessing the service
+    Value: !Sub "rtsp://${CameraId}-rtsp-movie:8554/camera"

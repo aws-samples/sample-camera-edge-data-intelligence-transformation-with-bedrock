@@ -1,0 +1,27 @@
+services:
+  edgkvsproducer:
+    build:
+      context: ../../..
+      dockerfile: camera_management/docker/rtsp_reciver/Dockerfile.dev
+    security_opt:
+      - no-new-privileges:true
+    # .evn ファイルが必要です。以下の構成。もともとはisengardの自動更新で頑張ろうとしたものの、すぐタイムアウトしちゃうんんで、
+    # 長期クレデンシャルをiam userで発行して使った方が楽です。
+    # AWS_ACCESS_KEY_ID=<xxxxxxx>
+    # AWS_SECRET_ACCESS_KEY=<xxxxxxx>
+    env_file:
+      - .env
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - STREAM_NAME=${STREAM_NAME}
+      - RTSP_URL=${RTSP_URL}
+      - RETENTION_PERIOD=${RETENTION_PERIOD:-"24"}
+      - FRAGMENT_DURATION=${FRAGMENT_DURATION:-"1000"}
+      - STORAGE_SIZE=${STORAGE_SIZE:-"512"}
+      - GSTREAMER_LOG_MODE=${GSTREAMER_LOG_MODE:-"stdout"}  # "stdout" or "null"
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    # isengardの一時クレデンシャルを使いたいならこっち。けど、開発上はすぐにタイムアウトするのできつい。
+    # volumes:
+    #   - ~/.aws/credentials:/home/kvs/.aws/credentials:ro
+    #   - ~/.aws/config:/home/kvs/.aws/config:ro

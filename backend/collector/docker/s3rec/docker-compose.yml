@@ -1,0 +1,22 @@
+services:
+  s3rec:
+    build:
+      context: ../../..
+      dockerfile: collector/docker/s3rec/Dockerfile
+      x-bake:
+        provenance: false
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - AWS_PROFILE=default
+      - AWS_REGION=${AWS_REGION}
+      - CAMERA_ID=${CAMERA_ID}
+      - COLLECTOR_ID=${COLLECTOR_ID}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - AWS_SHARED_CREDENTIALS_FILE=/home/sbx_user1051/.aws/credentials  # 追加
+      - AWS_CONFIG_FILE=/home/sbx_user1051/.aws/config # 追加
+    volumes:
+      - ~/.aws/credentials:/home/sbx_user1051/.aws/credentials:ro
+      - ~/.aws/config:/home/sbx_user1051/.aws/config:ro
+    ports:
+      - "9000:8080" 

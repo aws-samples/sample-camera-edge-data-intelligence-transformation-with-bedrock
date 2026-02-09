@@ -1,0 +1,84 @@
+{
+  "template": {
+    "settings": {
+      "analysis": {
+        "tokenizer": {
+          "kuromoji_tokenizer": {
+            "type": "kuromoji_tokenizer",
+            "mode": "search"
+          }
+        },
+        "analyzer": {
+          "japanese_analyzer": {
+            "type": "custom",
+            "tokenizer": "kuromoji_tokenizer",
+            "filter": [
+              "kuromoji_baseform",
+              "kuromoji_part_of_speech",
+              "cjk_width",
+              "ja_stop",
+              "kuromoji_stemmer",
+              "lowercase"
+            ]
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "detect_result": {
+          "type": "text",
+          "analyzer": "japanese_analyzer",
+          "search_analyzer": "japanese_analyzer"
+        },
+        "detect_notify_reason": {
+          "type": "text",
+          "analyzer": "japanese_analyzer",
+          "search_analyzer": "japanese_analyzer"
+        },
+        "camera_name": {
+          "type": "text",
+          "analyzer": "japanese_analyzer",
+          "search_analyzer": "japanese_analyzer",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "place_name": {
+          "type": "text",
+          "analyzer": "japanese_analyzer",
+          "search_analyzer": "japanese_analyzer",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "detect_tag": {
+          "type": "text",
+          "analyzer": "japanese_analyzer",
+          "search_analyzer": "japanese_analyzer",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "start_time": {
+          "type": "date",
+          "format": "iso8601"
+        },
+        "end_time": {
+          "type": "date",
+          "format": "iso8601"
+        },
+        "detect_notify_flg": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,68 @@
+FROM python:3.11-slim
+
+# 作業ディレクトリを設定
+WORKDIR /var/task
+
+# 開発用の追加パッケージをインストール
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# requirements.txtをコピーして依存関係をインストール
+COPY api_gateway/requirements.txt .
+RUN pip install -r requirements.txt
+
+# 開発用の追加パッケージ
+RUN pip install requests-aws4auth
+
+# 共通モジュールをコピー（開発時はボリュームマウントで上書きされる）
+COPY shared/ shared/
+
+# Copy all backend modules (only necessary files)
+COPY camera_management/api/ camera_management/api/
+COPY camera_management/deployment/ camera_management/deployment/
+COPY camera_management/__init__.py camera_management/__init__.py
+
+COPY place/api/ place/api/
+COPY place/__init__.py place/__init__.py
+
+COPY collector/api/ collector/api/
+COPY collector/deployment/ collector/deployment/
+COPY collector/__init__.py collector/__init__.py
+
+COPY detector/api/ detector/api/
+COPY detector/deployment/ detector/deployment/
+COPY detector/__init__.py detector/__init__.py
+
+COPY analytics/api/ analytics/api/
+COPY analytics/deployment/ analytics/deployment/
+COPY analytics/__init__.py analytics/__init__.py
+
+# API Gateway コードをコピー（開発時はボリュームマウントで上書きされる）
+COPY api_gateway/api/ api_gateway/api/
+COPY api_gateway/lambda_function.py api_gateway/lambda_function.py
+COPY api_gateway/__init__.py api_gateway/__init__.py
+
+COPY test_movie/api/ test_movie/api/
+COPY test_movie/deployment/ test_movie/deployment/
+COPY test_movie/__init__.py test_movie/__init__.py
+
+# ポートを公開
+EXPOSE 8000
+
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# セキュリティ対策: 非rootユーザーの作成と使用
+RUN groupadd -r appuser && useradd --no-log-init -r -g appuser appuser \
+    && mkdir -p /home/appuser \
+    && chown -R appuser:appuser /home/appuser
+
+# HOME環境変数を明示的に設定（boto3が~/.aws/を探すため）
+ENV HOME=/home/appuser
+
+USER appuser
+
+# 開発用: FastAPIサーバーをリロード付きで起動
+CMD ["python", "-m", "uvicorn", "api_gateway.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-exclude", "*/docker/*"]

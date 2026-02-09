@@ -1,0 +1,20 @@
+services:
+  batch_aws:
+    build:
+      context: ../../..
+      dockerfile: collector/docker/hlsyolo/Dockerfile
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - AWS_PROFILE=default
+      - CAMERA_ID=${CAMERA_ID}
+      - COLLECTOR_ID=${COLLECTOR_ID}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - DETECTOR_TEST_MODE=${DETECTOR_TEST_MODE:-false}
+      - DETECTOR_LOCAL_ENDPOINT=${DETECTOR_LOCAL_ENDPOINT:-http://host.docker.internal:9000}
+    volumes:
+      - ~/.aws/credentials:/home/appuser/.aws/credentials:ro
+      - ~/.aws/config:/home/appuser/.aws/config:ro
+      - ./output:/app/output

@@ -1,0 +1,27 @@
+{
+  "places": "Places",
+  "cameras": "Cameras",
+  "bookmarks": "Bookmarks",
+  "search": "Search",
+  "insights": "Insights",
+  "tagManagement": "Tag Management",
+  "testMovie": "Test Movie",
+  "notifications": "Notifications",
+  "notificationList": "Notification List",
+  "notificationListView": "View Notification List",
+  "profile": "Profile",
+  "logout": "Logout",
+  "login": "Login",
+  "help": "Help",
+  "noRecentNotifications": "No notifications in the last hour",
+  "timezoneSettings": "Timezone Settings",
+  "localeSettings": "Language Settings",
+  "timezones": {
+    "asiaTokyo": "Japan Standard Time (JST)",
+    "utc": "Coordinated Universal Time (UTC)",
+    "americaNewYork": "US Eastern Time (EST/EDT)",
+    "europeLondon": "UK Time (GMT/BST)",
+    "asiaShanghai": "China Standard Time (CST)"
+  }
+}
+

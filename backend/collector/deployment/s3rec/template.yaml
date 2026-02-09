@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: S3ファイル転送用CloudFormationテンプレート
+
+Parameters:
+  CameraId:
+    Type: String
+    Default: cam-001
+    Description: カメラID
+  CollectorId:
+    Type: String
+    Description: コレクターID
+  SourceS3BucketName:
+    Type: String
+    Description: 監視対象のS3バケット名
+  BucketName:
+    Type: String
+    Description: 保存先のS3バケット名（メインスタックから取得）
+  S3RecRepositoryUri:
+    Type: String
+    Description: S3Rec ECRリポジトリURI
+  LambdaRoleArn:
+    Type: String
+    Description: Lambda実行ロールのARN（Foundation Stackで事前作成済み）
+  LogsKmsKeyArn:
+    Type: String
+    Description: CloudWatch Logs暗号化用KMS Key ARN
+
+Resources:
+  # Lambda関数
+  S3RecFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: "Lambda実行ロールはFoundation Stackで事前作成済みでCloudWatch Logs権限を含む"
+          - id: W89
+            reason: "このLambdaはVPC内リソースへのアクセスが不要なため、VPC外にデプロイ"
+      checkov:
+        skip:
+          - id: CKV_AWS_116
+            comment: "DLQは本システムでは不要。失敗時はCloudWatch Logsで確認"
+          - id: CKV_AWS_173
+            comment: "環境変数に機密情報なし（カメラID、コレクターID、バケット名のみ）"
+          - id: CKV_AWS_117
+            comment: "VPC配置不要。外部APIアクセスのみで内部リソースへのアクセスなし"
+    Properties:
+      FunctionName: !Sub "${CollectorId}-function"
+      PackageType: Image
+      ImageUri: !Ref S3RecRepositoryUri
+      Role: !Ref LambdaRoleArn
+      MemorySize: 512
+      Timeout: 300
+      ReservedConcurrentExecutions: 100
+      Environment:
+        Variables:
+          CAMERA_ID: !Ref CameraId
+          COLLECTOR_ID: !Ref CollectorId
+          BUCKET_NAME: !Ref BucketName
+
+  # EventBridge Rule for S3 Object Created
+  S3ObjectCreatedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${CollectorId}-rule"
+      Description: !Sub "Trigger S3Rec Lambda when objects are created in ${SourceS3BucketName}"
+      EventPattern: !Sub |
+        {
+          "source": ["aws.s3"],
+          "detail-type": ["Object Created"],
+          "detail": {
+            "bucket": {
+              "name": ["${SourceS3BucketName}"]
+            },
+            "object": {
+              "key": [
+                {"prefix": "endpoint/${CameraId}/"}
+              ]
+            }
+          }
+        }
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt S3RecFunction.Arn
+          Id: "S3RecTarget"
+
+  # Lambda permission for EventBridge
+  S3RecEventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref S3RecFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt S3ObjectCreatedRule.Arn
+
+  # CloudWatch ロググループ
+  S3RecLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CollectorId}-function"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  S3RecFunctionName:
+    Description: Name of the S3Rec Lambda Function
+    Value: !Ref S3RecFunction
+  S3RecFunctionArn:
+    Description: ARN of the S3Rec Lambda Function
+    Value: !GetAtt S3RecFunction.Arn
+  S3ObjectCreatedRuleName:
+    Description: Name of the S3 Object Created EventBridge Rule
+    Value: !Ref S3ObjectCreatedRule
+  S3ObjectCreatedRuleArn:
+    Description: ARN of the S3 Object Created EventBridge Rule
+    Value: !GetAtt S3ObjectCreatedRule.Arn 

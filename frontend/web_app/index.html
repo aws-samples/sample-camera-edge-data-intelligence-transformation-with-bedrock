@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Cedix Management System"
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <!-- VSaaS SDK - nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
+    <!-- 理由: VSaaS SDKは "latest" を使用しており、バージョンが動的に変わるためintegrity属性を固定できない -->
+    <script src="https://vsaas.link/sdk/js/api/v1/latest/"></script> <!-- nosemgrep: html.security.audit.missing-integrity.missing-integrity -->
+    <title>Cedix</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!-- Polyfill for AWS Amplify (requires global object) -->
+    <script>
+      window.global = window;
+      window.process = window.process || { env: {} };
+      window.Buffer = window.Buffer || [];
+    </script>
+    <script type="module" src="/src/index.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,27 @@
+{
+  "places": "場所",
+  "cameras": "カメラ",
+  "bookmarks": "ブックマーク",
+  "search": "検索",
+  "insights": "インサイト",
+  "tagManagement": "タグ管理",
+  "testMovie": "テスト動画",
+  "notifications": "通知",
+  "notificationList": "通知一覧",
+  "notificationListView": "通知一覧を見る",
+  "profile": "プロフィール",
+  "logout": "ログアウト",
+  "login": "ログイン",
+  "help": "ヘルプ",
+  "noRecentNotifications": "直近の１時間、通知はありません",
+  "timezoneSettings": "タイムゾーン設定",
+  "localeSettings": "言語設定",
+  "timezones": {
+    "asiaTokyo": "日本標準時 (JST)",
+    "utc": "協定世界時 (UTC)",
+    "americaNewYork": "米国東部時間 (EST/EDT)",
+    "europeLondon": "英国時間 (GMT/BST)",
+    "asiaShanghai": "中国標準時 (CST)"
+  }
+}
+

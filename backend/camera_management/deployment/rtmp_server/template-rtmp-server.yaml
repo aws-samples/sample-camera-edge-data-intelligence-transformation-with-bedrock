@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RTMP Server CloudFormation Template (ECS Fargate with shared NLB)
+
+Parameters:
+  CameraId:
+    Type: String
+    Description: Camera ID for ECS task
+  RtmpServerRepositoryUri:
+    Type: String
+    Description: RTMP Server ECR repository URI
+  EcsTaskRoleArn:
+    Type: String
+    Description: ECS task role ARN
+  EcsTaskExecutionRoleArn:
+    Type: String
+    Description: ECS task execution role ARN
+  CameraClusterName:
+    Type: String
+    Description: Camera ECS cluster name
+  PublicSubnet1Id:
+    Type: String
+    Description: Public subnet 1 ID
+  PublicSubnet2Id:
+    Type: String
+    Description: Public subnet 2 ID
+  VpcId:
+    Type: String
+    Description: VPC ID
+  StreamName:
+    Type: String
+    Description: Kinesis Video Stream name
+  RtmpStreamPath:
+    Type: String
+    Description: Unique stream path for RTMP authentication
+  RetentionPeriod:
+    Type: String
+    Default: "24"
+    Description: KVS retention period in hours
+  LogsKmsKeyArn:
+    Type: String
+    Description: KMS Key ARN for CloudWatch Logs encryption
+  # Shared NLB Parameters
+  NlbArn:
+    Type: String
+    Description: ARN of the shared Network Load Balancer
+  NlbSecurityGroupId:
+    Type: String
+    Description: Security Group ID of the shared NLB
+  ListenerPort:
+    Type: Number
+    Description: Port number for this RTMP server's listener
+
+Resources:
+  # Kinesis Video Stream
+  KinesisVideoStream:
+    Type: AWS::KinesisVideo::Stream
+    Properties:
+      Name: !Ref StreamName
+      DataRetentionInHours: !Ref RetentionPeriod
+      MediaType: video/h264
+      Tags:
+        - Key: CameraId
+          Value: !Ref CameraId
+        - Key: Purpose
+          Value: RTMP-Server-Stream
+
+  # RTMP Server Security Group (for ECS tasks)
+  # Note: NLB does not use security groups for forwarding, so we allow from anywhere
+  # 0.0.0.0/0 is required because cameras connect from mobile carrier networks (docomo/au/SoftBank)
+  # with dynamic IPs that cannot be predetermined
+  RtmpServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    # checkov:skip=CKV_AWS_23:RTMP server must accept connections from any IP due to mobile carrier networks
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W2
+            reason: "RTMP server must accept connections from any IP - cameras use mobile carrier networks with dynamic IPs"
+          - id: W9
+            reason: "RTMP server must accept connections from any IP - cameras use mobile carrier networks with dynamic IPs"
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-EC23
+            reason: "RTMP server must accept connections from any IP - cameras use mobile carrier networks with dynamic IPs"
+    Properties:
+      GroupDescription: Security group for RTMP Server ECS tasks
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 1935
+          ToPort: 1935
+          CidrIp: "0.0.0.0/0"
+          Description: RTMP inbound (NLB health checks and client traffic)
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub "${CameraId}-rtmp-server-sg"
+
+  # RTMP Target Group (TCP)
+  # Note: Target group name max 32 chars, so use first 8 chars of CameraId + port
+  RtmpTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "rtmp-${ListenerPort}-tg"
+      Port: 1935
+      Protocol: TCP
+      VpcId: !Ref VpcId
+      TargetType: ip
+      HealthCheckProtocol: TCP
+      HealthCheckPort: "1935"
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: CameraId
+          Value: !Ref CameraId
+
+  # RTMP Listener (on shared NLB with assigned port)
+  RtmpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref NlbArn
+      Port: !Ref ListenerPort
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref RtmpTargetGroup
+
+  # ECS Task Definition
+  RtmpServerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    # checkov:skip=CKV_AWS_97:Environment variables contain only non-sensitive configuration
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W89
+            reason: "Environment variables contain only non-sensitive configuration (AWS_REGION, RTMP_PORT, STREAM_NAME)"
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-ECS2
+            reason: "Environment variables contain only non-sensitive configuration (AWS_REGION, RTMP_PORT, STREAM_NAME). No secrets or credentials."
+    Properties:
+      Family: !Sub "${CameraId}-rtmp-server-task"
+      RequiresCompatibilities:
+        - FARGATE
+      NetworkMode: awsvpc
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: !Ref EcsTaskExecutionRoleArn
+      TaskRoleArn: !Ref EcsTaskRoleArn
+      ContainerDefinitions:
+        - Name: !Sub "${CameraId}-rtmp-server-container"
+          Image: !Ref RtmpServerRepositoryUri
+          Essential: true
+          PortMappings:
+            - ContainerPort: 1935
+              Protocol: tcp
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - nc -z localhost 1935 || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref RtmpServerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: rtmp-server
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: STREAM_NAME
+              Value: !Ref StreamName
+            - Name: RTMP_STREAM_PATH
+              Value: !Ref RtmpStreamPath
+            - Name: RTMP_PORT
+              Value: "1935"
+
+  # ECS Service
+  RtmpServerService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - RtmpListener
+    Properties:
+      ServiceName: !Sub "${CameraId}-rtmp-server-service"
+      Cluster: !Ref CameraClusterName
+      TaskDefinition: !Ref RtmpServerTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      EnableExecuteCommand: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref RtmpServerSecurityGroup
+          Subnets:
+            - !Ref PublicSubnet1Id
+            - !Ref PublicSubnet2Id
+      LoadBalancers:
+        - ContainerName: !Sub "${CameraId}-rtmp-server-container"
+          ContainerPort: 1935
+          TargetGroupArn: !Ref RtmpTargetGroup
+      Tags:
+        - Key: Description
+          Value: Service for RTMP to KVS streaming
+
+  # CloudWatch Log Group
+  RtmpServerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${CameraId}-rtmp-server"
+      RetentionInDays: 14
+      KmsKeyId: !Ref LogsKmsKeyArn
+
+Outputs:
+  KinesisVideoStreamArn:
+    Description: ARN of the created Kinesis Video Stream
+    Value: !GetAtt KinesisVideoStream.Arn
+  KinesisVideoStreamName:
+    Description: Name of the created Kinesis Video Stream
+    Value: !Ref KinesisVideoStream
+  RtmpServerTaskDefinitionArn:
+    Description: ARN of the RTMP Server Task Definition
+    Value: !Ref RtmpServerTaskDefinition
+  RtmpServerServiceName:
+    Description: Name of the RTMP Server Service
+    Value: !Ref RtmpServerService
+  ListenerPort:
+    Description: Port number assigned to this RTMP server
+    Value: !Ref ListenerPort
+  RtmpStreamPath:
+    Description: Stream path for RTMP authentication
+    Value: !Ref RtmpStreamPath

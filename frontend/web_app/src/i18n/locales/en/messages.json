@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "fetchCamerasFailed": "Failed to fetch camera data.",
+    "fetchPlacesFailed": "Failed to fetch place data.",
+    "fetchBookmarksFailed": "Failed to fetch bookmark list.",
+    "addBookmarkFailed": "Failed to add bookmark detail.",
+    "createBookmarkFailed": "Failed to create new bookmark.",
+    "networkError": "A network error occurred.",
+    "unknownError": "An error occurred.",
+    "requiredField": "This field is required.",
+    "invalidInput": "Invalid input."
+  },
+  "success": {
+    "saved": "Saved",
+    "deleted": "Deleted",
+    "updated": "Updated",
+    "created": "Created",
+    "bookmarkAdded": "Added to bookmark"
+  },
+  "confirm": {
+    "delete": "Are you sure you want to delete?",
+    "discard": "Discard changes?"
+  },
+  "validation": {
+    "enterBookmarkName": "Please enter a bookmark name",
+    "enterCameraName": "Please enter a camera name",
+    "enterPlaceName": "Please enter a place name"
+  }
+}
+

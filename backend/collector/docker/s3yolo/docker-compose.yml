@@ -1,0 +1,22 @@
+services:
+  s3yolo:
+    build:
+      context: ../../..
+      dockerfile: collector/docker/s3yolo/Dockerfile
+      x-bake:
+        provenance: false
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - AWS_PROFILE=default
+      - AWS_REGION=${AWS_REGION:-ap-northeast-1}
+      - CAMERA_ID=${CAMERA_ID:-test-camera}
+      - COLLECTOR_ID=${COLLECTOR_ID:-test-collector}
+      - BUCKET_NAME=${BUCKET_NAME:-test-bucket}
+      - AWS_SHARED_CREDENTIALS_FILE=/home/sbx_user1051/.aws/credentials
+      - AWS_CONFIG_FILE=/home/sbx_user1051/.aws/config
+    volumes:
+      - ~/.aws/credentials:/home/sbx_user1051/.aws/credentials:ro
+      - ~/.aws/config:/home/sbx_user1051/.aws/config:ro
+    ports:
+      - "9000:8080"

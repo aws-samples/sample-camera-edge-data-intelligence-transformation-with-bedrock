@@ -1,0 +1,72 @@
+# ============================================
+# KVS Base Image (GStreamer + KVS Producer SDK)
+# ============================================
+# This image contains pre-built KVS Producer SDK and GStreamer runtime.
+# Build once (~30-60 min), then use as base for rtmp-server builds (~2-3 min).
+
+# Stage 1: Build KVS Producer SDK
+FROM debian:12-slim AS kvs-builder
+
+RUN apt-get update && apt-get install -y \
+    git cmake build-essential \
+    libssl-dev libcurl4-openssl-dev \
+    liblog4cplus-dev libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    pkg-config m4 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app/producer
+RUN git clone --depth 1 https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp.git .
+RUN mkdir -p build && cd build && \
+    cmake .. -DBUILD_GSTREAMER_PLUGIN=ON -DBUILD_DEPENDENCIES=TRUE && \
+    make -j$(nproc)
+
+# Stage 2: Runtime with KVS SDK
+FROM debian:12-slim
+
+# Install GStreamer runtime and required libraries
+RUN apt-get update && apt-get install -y \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    libssl3 libcurl4 liblog4cplus-2.0.5 \
+    librtmp1 \
+    ca-certificates \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash appuser
+
+WORKDIR /app
+
+# Copy KVS Producer SDK libraries and plugin
+COPY --from=kvs-builder /app/producer/build /app/producer/build
+COPY --from=kvs-builder /app/producer/open-source/local/lib /app/producer/lib
+
+# Set up environment for KVS SDK
+ENV GST_PLUGIN_PATH=/app/producer/build
+ENV LD_LIBRARY_PATH=/app/producer/lib:/app/producer/build
+
+# Create directories and set ownership
+RUN mkdir -p /app/certs && \
+    chown -R appuser:appuser /app
+
+# Verify kvssink is available
+RUN gst-inspect-1.0 kvssink || echo "kvssink will be available after LD_LIBRARY_PATH is set"
+
+# Expose ports (for reference)
+EXPOSE 1935 1936
+
+# Health check for container orchestration (GStreamer kvssink verification)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD gst-inspect-1.0 kvssink > /dev/null 2>&1 || exit 1
+
+# Switch to non-root user for security
+# Note: Final Dockerfile may need to switch back to root temporarily for file copies
+USER appuser

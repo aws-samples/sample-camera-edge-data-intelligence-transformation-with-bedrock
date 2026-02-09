@@ -1,0 +1,17 @@
+services:
+  testdata:
+    build:
+      context: ../..
+      dockerfile: infrastructure/testdata/Dockerfile
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - AWS_PROFILE=default
+      - AWS_REGION=${AWS_REGION}
+      - STACK_PREFIX=${STACK_PREFIX}
+      - AWS_SHARED_CREDENTIALS_FILE=/home/appuser/.aws/credentials
+      - AWS_CONFIG_FILE=/home/appuser/.aws/config
+    volumes:
+      - ~/.aws/credentials:/home/appuser/.aws/credentials:ro
+      - ~/.aws/config:/home/appuser/.aws/config:ro
+    command: ["--lang", "${LANG:-ja}"]
