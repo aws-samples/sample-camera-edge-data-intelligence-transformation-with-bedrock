@@ -105,6 +105,7 @@
 - なお、YOLOv9(MIT)のコレクターを作成すると、自動で `collector-internal` という Detectorが作成されます。これはYOLOの検出結果を保存するDetectorとなりますので、削除しないようお願いします。
 [YOLOが検出した画像や検出結果を確認できる画面]
 ![1770566373082.png](doc/image/1770566373082.png)
+
 | タイプ | 機能 | Collector名 | 実行環境 | 説明 | 発生するイベント |
 | --- | --- | --- | --- | --- | --- |
 | HLS | レコーダー機能 | **hlsrec** | ECS | HLSストリームから画像/動画キャプチャ | `save_image`  `save_video` |
