@@ -4,19 +4,6 @@
 
 ---
 
-## 目次
-
-1. [概要](#概要)
-2. [CDKアプリ構成](#cdkアプリ構成)
-3. [コアスタック](#コアスタック)
-4. [ECRスタック](#ecrスタック)
-5. [FoundationStackで作成されるリソース](#foundationstackで作成されるリソース)
-6. [デプロイ依存関係](#デプロイ依存関係)
-7. [シェルスクリプト一覧](#シェルスクリプト一覧)
-8. [デプロイ手順](#デプロイ手順)
-
----
-
 ## 概要
 
 CEDIXのインフラストラクチャは、AWS CDK（TypeScript）で定義されています。
@@ -113,18 +100,7 @@ WebAppStack (別アプリ: cdk-webapp.ts)
 ECRスタック群 (独立、並列デプロイ可能)
 ```
 
-### デプロイフェーズ
-
-| Phase | スタック | 説明 |
-| --- | --- | --- |
-| 1 | keys, api-ecr, ingestion-ecr, foundation | 依存なし、並列デプロイ |
-| 1 | 各種ECRスタック（8個） | 独立、並列デプロイ |
-| 2 | application | foundation + api-ecr + ingestion-ecr 完了後 |
-| 2 | bedrock | foundation 完了後 |
-| 3 | frontend | keys + application 完了後 |
-
----
-
+### 
 ## シェルスクリプト一覧
 
 | スクリプト | 役割 |

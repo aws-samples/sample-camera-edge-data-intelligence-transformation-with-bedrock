@@ -1,22 +1,6 @@
 # APIエンドポイント一覧
 本ドキュメントでは、本サンプルの全APIエンドポイント（85個）を記載します。
 
-## 目次
-1. [userinfo（ユーザー情報）](#1-userinfoユーザー情報)
-2. [place（現場管理）](#2-place現場管理)
-3. [camera（カメラ管理）](#3-cameraカメラ管理)
-4. [camera-collector（コレクター管理）](#4-camera-collectorコレクター管理)
-5. [file（ファイル管理）](#5-fileファイル管理)
-6. [detector（検出器管理）](#6-detector検出器管理)
-7. [detect-log（検出ログ）](#7-detect-log検出ログ)
-8. [timeseries（時系列データ）](#8-timeseries時系列データ)
-9. [search（検索）](#9-search検索)
-10. [bookmark（ブックマーク）](#10-bookmarkブックマーク)
-11. [report（レポート）](#11-reportレポート)
-12. [tag（タグ管理）](#12-tagタグ管理)
-13. [tags（タグ一覧）](#13-tagsタグ一覧)
-14. [test-movie（テスト動画）](#14-test-movieテスト動画)
-
 ## 1. userinfo（ユーザー情報）
 | メソッド | パス | 説明 |
 | --- | --- | --- |
@@ -175,4 +159,3 @@
 | `/api/timeseries` | detect_tag_timeseries.router | Timeseries |
 | `/api/tag` | tag.router | Tag |
 | `/api/tags` | tags.router | Tags |
-
