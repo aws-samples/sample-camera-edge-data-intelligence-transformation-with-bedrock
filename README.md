@@ -8,8 +8,11 @@
 - AWS Summit Japan 2025
 - JAPAN BUILD TOKYO 建設DX展 2025
 - 建設RXコンソーシアム Exhibition2025
+
 関連ブログ：
+
 [https://aws.amazon.com/jp/blogs/news/japan-build-tokyo-cre-booth-and-sessions/](https://aws.amazon.com/jp/blogs/news/japan-build-tokyo-cre-booth-and-sessions/)
+
 [https://aws.amazon.com/jp/blogs/news/aws-summit-2025-japan-cre-booth-and-sessions/](https://aws.amazon.com/jp/blogs/news/aws-summit-2025-japan-cre-booth-and-sessions/)
 
 ## Use Case
@@ -262,6 +265,9 @@ CEDIX/
 - Docker
 
 ### デプロイ手順
+#### 前提
+本リポジトリをCloneして、本リポジトリーのルートディレクトリに移動している状態を前提とします。
+
 #### ステップ1: YOLOv9設定ファイルのセットアップ
 YOLOv9 MITの設定ファイルをダウンロードします。
 ```bash
@@ -353,17 +359,18 @@ cd infrastructure/cdk
 ```
 **注意**: このスクリプトは全リソースを削除します。本番環境では慎重に使用してください。
 
-### Quick Setup
+## Quick Setup
 以下のドキュメントをご確認ください
+
 [RTSPカメラのQuick Setup](doc/QUICK_START_RTSP.md)
 
 ## 関連ドキュメント
 ### 技術ドキュメント
 | ドキュメント | 説明 |
 | --- | --- |
-| [APIエンドポイント一覧](_doc/API_ENDPOINTS.md) | 全エンドポイントの一覧 |
-| [CDK構成ガイド](_doc/CDK_ARCHITECTURE.md) | 16スタックの詳細と依存関係 |
-| [開発者向けガイド](_doc/README_DEV.md) | 開発環境のセットアップと開発フロー |
+| [APIエンドポイント一覧](doc/API_ENDPOINTS.md) | 全エンドポイントの一覧 |
+| [CDK構成ガイド](doc/CDK_ARCHITECTURE.md) | 16スタックの詳細と依存関係 |
+| [開発者向けガイド](doc/README_DEV.md) | 開発環境のセットアップと開発フロー |
 
 ## CONTRIBUTING
 本プロジェクトへの質問や改善提案の詳細は、[CONTRIBUTING](CONTRIBUTING.md) をご確認ください

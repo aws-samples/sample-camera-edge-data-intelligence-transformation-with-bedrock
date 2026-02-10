@@ -2,6 +2,9 @@
 # CDK実行用のラッパースクリプト
 # 使い方: ./run-cdk.sh list
 #        ./run-cdk.sh diff
+#        ./run-cdk.sh deploy --all --require-approval never
+
+set -e  # エラー時に停止
 
 # スクリプトのディレクトリに移動
 cd "$(dirname "$0")"
@@ -36,6 +39,20 @@ echo "  ${STACK_PREFIX}-kvs-base-ecr"
 echo "  ${STACK_PREFIX}-rtmp-server-ecr"
 echo "===================="
 echo ""
+
+# deploy --all の場合、kvs-base-ecr を先にデプロイする必要があるかチェック
+if [[ "$1" == "deploy" ]] && [[ "$*" == *"--all"* ]]; then
+    # kvs-base-ecr が存在するか確認
+    if ! aws ssm get-parameter --name /Cedix/Ecr/KvsBaseImageUri --region "$AWS_REGION" --query Parameter.Value --output text 2>/dev/null | grep -q "ecr"; then
+        echo "⚠️  KVS Base イメージが見つかりません"
+        echo "   → 先に kvs-base-ecr をデプロイします（初回は30-60分かかります）"
+        echo ""
+        ./node_modules/.bin/cdk deploy "${STACK_PREFIX}-kvs-base-ecr" "${@:2}"
+        echo ""
+        echo "✅ kvs-base-ecr のデプロイが完了しました"
+        echo ""
+    fi
+fi
 
 # CDKコマンドを実行（直接バイナリを使用）
 ./node_modules/.bin/cdk "$@"
