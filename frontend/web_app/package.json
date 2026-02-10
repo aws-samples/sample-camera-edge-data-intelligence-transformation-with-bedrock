@@ -14,7 +14,7 @@
     "@mui/material": "^5.14.3",
     "@mui/x-date-pickers": "^6.20.2",
     "aws-amplify": "^5.3.3",
-    "axios": "^1.4.0",
+    "axios": "^1.13.5",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^3.0.0",
