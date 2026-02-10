@@ -89,15 +89,15 @@ const filterTriggerEventsByFileType = (events, fileType) => {
 };
 
 /**
- * ファイルタイプに基づいてデフォルトのトリガーイベントを取得
- * @param {string} fileType - ファイルタイプ ('image' | 'video')
- * @returns {string} デフォルトのトリガーイベント
+ * デフォルトのトリガーイベントを取得
+ * コレクタータイプによって利用可能なイベントが異なるため、デフォルトは空とする
+ * - hlsYolo: ClassDetectEvent, AreaDetectEvent のみ
+ * - s3Yolo: ClassDetectEvent のみ
+ * - hlsrec/s3rec等: SaveImageEvent, SaveVideoEvent
+ * @returns {string} デフォルトのトリガーイベント（空文字）
  */
-const getDefaultTriggerEvent = (fileType) => {
-  if (fileType === 'video') {
-    return 'SaveVideoEvent';
-  }
-  return 'SaveImageEvent';
+const getDefaultTriggerEvent = () => {
+  return '';
 };
 
 const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
@@ -135,7 +135,7 @@ const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
         const defaultModel = defaultFileType === 'video' 
           ? 'apac.amazon.nova-pro-v1:0' 
           : 'global.anthropic.claude-sonnet-4-5-20250929-v1:0';
-        const defaultTriggerEvent = getDefaultTriggerEvent(defaultFileType);
+        const defaultTriggerEvent = getDefaultTriggerEvent();
         
         setFormData({
           ...data,  // camera_id, collector_id, collector_name, collector_mode
@@ -209,7 +209,7 @@ const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
         
         // 現在選択中のトリガーイベントが新しいファイルタイプで利用不可の場合
         if (allowedFileTypes && allowedFileTypes.length > 0 && !allowedFileTypes.includes(value)) {
-          newData.trigger_event = getDefaultTriggerEvent(value);
+          newData.trigger_event = getDefaultTriggerEvent();
         }
       }
       
@@ -448,7 +448,7 @@ const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
               <FormControl fullWidth>
                 <InputLabel>{t('dialogs:detector.triggerEvent')}</InputLabel>
                 <Select
-                  value={formData.trigger_event || getDefaultTriggerEvent(formData.file_type)}
+                  value={formData.trigger_event || ''}
                   onChange={(e) => handleChange('trigger_event', e.target.value)}
                   label={t('dialogs:detector.triggerEvent')}
                 >
