@@ -93,7 +93,139 @@ aws configure
 
 
 ## 各サービスの起動方法
-### 1. API Gateway（統合APIサーバー）
+### 1. Camera Management（カメラ管理）
+
+#### 1.1 RTSP Receiver（RTSPカメラ接続）
+
+**概要**: RTSPカメラからの映像をKinesis Video Streamsへ転送
+
+**起動方法**:
+```bash
+cd backend/camera_management/docker/rtsp_reciver
+./start.sh
+```
+
+**機能**:
+- RTSPストリームを受信 (RTSP Receiverがクライアントなので、RTSPサーバーに接続して映像を受信する)
+- GStreamer経由でKinesis Video Streamsへ転送
+
+
+#### 1.2 RTMP Server（RTMPカメラ接続）
+
+**概要**: RTMPカメラからの映像を受信し、Kinesis Video Streamsへ転送
+
+**起動方法**:
+```bash
+cd backend/camera_management/docker/rtmp_server
+./start.sh
+```
+
+**機能**:
+- RTMP ストリームを受信 (RTMP Server がサーバーなので、RTSPクライアントからの映像を受信する)
+- GStreamer経由でKinesis Video Streamsへ転送
+
+**ポート**:
+- `1935`: RTMP（非暗号化）
+
+
+### 2. Collector（データ収集サービス）
+
+#### 2.1 HlsRec（HLS画像/動画キャプチャ）
+
+**概要**: HLSストリームから画像・動画をキャプチャ
+
+**起動方法**:
+```bash
+cd backend/collector/docker/hlsrec
+./start.sh
+```
+
+**機能**:
+- HLSストリームから定期的に画像・動画を取得
+- S3バケットへ保存
+- DynamoDBへメタデータ登録
+- 発火するイベントは（save_image、save_video）
+- EventBridge経由でDetectorへ通知
+- ECS サービスで稼働
+
+#### 2.2 HlsYolo（HLS + YOLOv9物体検出）
+
+**概要**: HLSストリームから映像を取得し、YOLOv9で物体検出・ByteTrackで追跡
+
+**起動方法**:
+```bash
+cd backend/collector/docker/hlsyolo
+./start.sh
+```
+
+**機能**:
+- HLSストリームからフレーム抽出
+- YOLOv9（MIT版）による物体検出（人・車両等80クラス）
+- ByteTrackアルゴリズムによる物体追跡
+- 発火するイベントは（class_detect、area_detect）
+- EventBridge経由でDetectorへ通知
+- ECS サービスで稼働
+
+
+#### 2.3 S3Rec（S3ファイル収集）
+
+**概要**: S3バケットから静的な画像・動画ファイルを収集
+
+**起動方法**:
+```bash
+cd backend/collector/docker/s3rec
+./start.sh
+```
+
+**機能**:
+- S3バケットのEventBridgeイベントを監視
+- 新規アップロードファイルを処理
+- DynamoDBへメタデータ登録
+- 発火するイベントは（save_image、save_video）
+- EventBridge経由でDetectorへ通知
+- EventBridge +  Lambdaで稼働
+
+#### 2.4 S3Yolo（S3 + YOLOv9物体検出）
+
+**概要**: S3バケットにアップロードされた画像に対してYOLOv9で物体検出
+
+**起動方法**:
+```bash
+cd backend/collector/docker/s3yolo
+./start.sh
+```
+
+**機能**:
+- S3バケットのEventBridgeイベントを監視
+- YOLOv9（MIT版）による物体検出（人・車両等80クラス）
+- 侵入/退出検知（area_detect）は非対応（静止画のため）
+- イベント駆動型検出（class_detect）
+- EventBridge経由でDetectorへ通知
+- EventBridge +  Lambdaで稼働
+
+---
+
+### 3. Detector（AI検出サービス）
+
+#### Bedrock Detector（AWS Bedrock映像解析）
+
+**概要**: AWS Bedrock（生成AIモデル）による映像解析
+
+**起動方法**:
+```bash
+cd backend/detector/docker/bedrock
+./start.sh
+```
+
+**機能**:
+- EventBridge駆動でCollectorからのイベントを受信
+- AWS Bedrockのマルチモーダルモデルで映像解析
+- カスタムプロンプトによる柔軟な解析
+- 検出ログをDynamoDB + OpenSearchへ保存 (OpenSearchはDynamoDBStream+Lambda経由)
+
+---
+
+### 4. API Gateway（統合APIサーバー）
 **概要**: 全てのバックエンドAPIを統合したメインエントリーポイント
 **起動方法**:
 ```bash
@@ -114,20 +246,13 @@ cd backend/api_gateway
 - Place API（現場管理）
 - Test Movie API（テストムービー）
 
-**環境変数**:
-- `AUTH_MODE=middleware`: 認証モード（middleware/none）
-- `DEPLOY_MODE=production`: デプロイモード
-- `CAMERA_RESOURCE_DEPLOY=on`: カメラリソースデプロイ制御
-- `COLLECTION_RESOURCE_DEPLOY=off`: コレクションリソースデプロイ制御
-- `DETECTOR_RESOURCE_DEPLOY=on`: Detectorリソースデプロイ制御
-
-**ホットリロード**:
+**Dockerのホットリロード**:
 - `backend/api_gateway`配下のコード変更は自動反映
 - `backend/shared`、`backend/camera_management`等の共通モジュールも監視対象
 
 ---
 
-### 2. Ingestion（OpenSearchデータ取り込み）
+### 5. Ingestion（OpenSearchデータ取り込み）
 **概要**: DynamoDB Streams → OpenSearch Serverlessへのデータ取り込み
 **起動方法**:
 ```bash
@@ -140,130 +265,9 @@ cd backend/analytics/docker/ingestion
 - OpenSearch Serverlessへインデックス登録
 - 検索用データの構造化
 
-**接続先**:
-- DynamoDB: `{stackPrefix}-detectLog`テーブル
-- OpenSearch: CloudFormationから取得したエンドポイント
-
----
-
-### 3. Collector（データ収集サービス）
-
-#### 3.1 HlsYolo（HLS + YOLOv9物体検出）
-
-**概要**: HLSストリームから映像を取得し、YOLOv9で物体検出・ByteTrackで追跡
-
-**起動方法**:
-```bash
-cd backend/collector/docker/hlsyolo
-./start.sh
-```
-
-**機能**:
-- HLSストリームからフレーム抽出
-- YOLOv9（MIT版）による物体検出（人・車両等80クラス）
-- ByteTrackアルゴリズムによる物体追跡
-- イベント駆動型検出（class_detect、area_detect）
-- EventBridge経由でDetectorへ通知
-
-#### 3.2 HlsRec（HLS画像/動画キャプチャ）
-
-**概要**: HLSストリームから画像・動画をキャプチャ
-
-**起動方法**:
-```bash
-cd backend/collector/docker/hlsrec
-./start.sh
-```
-
-**機能**:
-- HLSストリームから定期的に画像・動画を取得
-- S3バケットへ保存
-- DynamoDBへメタデータ登録
-
-#### 3.3 S3Rec（S3ファイル収集）
-
-**概要**: S3バケットから静的な画像・動画ファイルを収集
-
-**起動方法**:
-```bash
-cd backend/collector/docker/s3rec
-./start.sh
-```
-
-**機能**:
-- S3バケットのEventBridgeイベントを監視
-- 新規アップロードファイルを処理
-- DynamoDBへメタデータ登録
-
-#### 3.4 S3Yolo（S3 + YOLOv9物体検出）
-
-**概要**: S3バケットにアップロードされた画像に対してYOLOv9で物体検出
-
-**起動方法**:
-```bash
-cd backend/collector/docker/s3yolo
-./start.sh
-```
-
-**機能**:
-- S3バケットのEventBridgeイベントを監視
-- YOLOv9（MIT版）による物体検出（人・車両等80クラス）
-- イベント駆動型検出（class_detect）
-- EventBridge経由でDetectorへ通知
-
-**注意**:
-- HlsYoloと異なり、リアルタイムストリーム処理ではなくバッチ処理
-- 侵入/退出検知（area_detect）は非対応（静止画のため）
-
----
-
-### 4. Detector（AI検出サービス）
-
-#### Bedrock Detector（AWS Bedrock映像解析）
-
-**概要**: AWS Bedrock（Claude 3.5 Sonnet v2等）による映像解析
-
-**起動方法**:
-```bash
-cd backend/detector/docker/bedrock
-./start.sh
-```
-
-**機能**:
-- EventBridge駆動でCollectorからのイベントを受信
-- AWS Bedrockのマルチモーダルモデルで映像解析
-- カスタムプロンプトによる柔軟な解析
-- 検出ログをDynamoDB + OpenSearchへ保存
-- タグ自動生成
-
-
----
-
-### 5. Camera Management（カメラ管理）
-
-#### RTSP Receiver（RTSPカメラ接続）
-
-**概要**: RTSPカメラからの映像をKinesis Video Streamsへ転送
-
-**起動方法**:
-```bash
-cd backend/camera_management/docker/rtsp_reciver
-./start.sh
-```
-
-**機能**:
-- RTSPストリームを受信
-- Kinesis Video Streamsへ転送
-- HLS配信用エンドポイント生成
-
-**設定**:
-- カメラ作成時にCloudFormationで自動デプロイ
-- ローカル開発では手動起動
-
 ---
 
 ### 6. Frontend（React SPA）
-
 #### Web App（React + Material-UI）
 
 **概要**: ユーザー向けWebアプリケーション
@@ -284,14 +288,6 @@ cd frontend/web_app
 
 **アクセス**:
 - URL: `http://localhost:3000`
-
-**機能**:
-- Cognito認証（ログイン・ログアウト）
-- ライブダッシュボード（最大12カメラ同時表示）
-- カメラビュー（タイムライン、検出マーカー）
-- 検索・分析（OpenSearch全文検索）
-- インサイト（タグ別時系列グラフ）
-- ブックマーク管理
 
 **開発時の注意**:
 - `--prod`オプションを使用すると、デプロイ済みのAPI Gatewayに接続
