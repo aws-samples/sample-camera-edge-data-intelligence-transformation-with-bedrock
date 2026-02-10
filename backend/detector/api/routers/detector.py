@@ -91,12 +91,16 @@ async def get_trigger_events(
         if collector_mode in ['video', 'image_and_video']:
             events.append({"value": "SaveVideoEvent", "label": "SaveVideoEvent（動画保存時）"})
         
-        # hlsYolo の場合のみ追加イベント
+        # hlsYolo の場合は ClassDetectEvent と AreaDetectEvent を追加
         if collector == 'hlsYolo':
             events.extend([
                 {"value": "ClassDetectEvent", "label": "ClassDetectEvent（クラス検知時）"},
                 {"value": "AreaDetectEvent", "label": "AreaDetectEvent（エリア検知時）"}
             ])
+        
+        # s3Yolo の場合は ClassDetectEvent のみ追加（AreaDetectEventは継続トラッキングが必要なため非対応）
+        if collector == 's3Yolo':
+            events.append({"value": "ClassDetectEvent", "label": "ClassDetectEvent（クラス検知時）"})
         
         logger.info(f"Trigger events for collector_id={collector_id}, collector={collector}, collector_mode={collector_mode}: {len(events)} events")
         
