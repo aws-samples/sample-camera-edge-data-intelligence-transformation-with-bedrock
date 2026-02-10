@@ -24,8 +24,6 @@
 
 ## Architecture
 ![1770573228433.png](doc/image/1770573228433.png)
-- アーキテクチャ補足
-  - 本アーキテクチャは新しい映像プロトコルのカメラが追加されても容易に拡張していけることを想定して設計しています。そのため、特定プロトコルしか使わないことが確定しているケースなどではやや冗長です。そのような場合、ぜひAWSにご相談ください。
 
 ## Key Feature
 | 課題 | 解決策 |
@@ -266,7 +264,7 @@ CEDIX/
 
 ### デプロイ手順
 #### 前提
-本リポジトリをCloneして、本リポジトリーのルートディレクトリに移動している状態を前提とします。
+本リポジトリをCloneして、本リポジトリのルートディレクトリに移動している状態を前提とします。
 
 #### ステップ1: YOLOv9設定ファイルのセットアップ
 YOLOv9 MITの設定ファイルをダウンロードします。
@@ -359,10 +357,12 @@ cd infrastructure/cdk
 ```
 **注意**: このスクリプトは全リソースを削除します。本番環境では慎重に使用してください。
 
-## Quick Setup
+## Getting Started
 以下のドキュメントをご確認ください
 
-[RTSPカメラのQuick Setup](doc/QUICK_START_RTSP.md)
+- [Quick Start RTSPカメラ](doc/QUICK_START_RTSP.md)
+- [Quick Start RTMPカメラ](doc/QUICK_START_RTMP.md)
+- [Quick Start S3カメラ](doc/QUICK_START_S3.md)
 
 ## 関連ドキュメント
 ### 技術ドキュメント
