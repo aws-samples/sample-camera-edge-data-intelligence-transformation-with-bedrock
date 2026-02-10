@@ -1,14 +1,23 @@
 # Ubuntu インストールガイド
 
 Ubuntu 24.04 LTS でのデプロイ環境構築手順を提供します。
-> **注意**: これらの手順は開発者実施時の覚書となります。ご自身の環境に合わせて調整してください。
+> **注意**:
+> これらの手順は開発実施時の覚書となります。
+> ご自身の環境に合わせて調整してください。
 
 ---
+### ログインユーザーが ubuntuじゃないなら変更
+```
+su ubuntu
+
+## パスワード設定必要なら
+sudo passwd <any-password>
+```
 
 ## Node.js 24.11.11
-
 ```bash
 # nvmをダウンロードしてインストールする：
+export NVM_DIR=/home/ubuntu/.nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 
 # シェルを再起動する代わりに実行する
@@ -24,10 +33,7 @@ node -v # "v24.11.1"が表示される。
 npm -v # "11.6.2"が表示される。
 ```
 
----
-
 ## Python 3.11
-
 ```bash
 sudo apt update
 sudo apt upgrade -y
@@ -42,12 +48,8 @@ sudo apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
 ```
 
----
-
 ## Docker
-
 ### インストール
-
 ```bash
 # Add Docker's official GPG key:
 sudo apt update
@@ -78,22 +80,21 @@ sudo docker run hello-world
 ```
 
 ### ユーザー権限設定
-
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker
 
 groups
 # 出力に "docker" が含まれていればOK
+# もし出ない場合、一度、session をログアウトして再ログインして試してください。
 
 docker ps
 ```
 
----
-
 ## AWS CLI
-
 ```bash
+sudo apt update && sudo apt install -y unzip
+
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install
@@ -102,15 +103,12 @@ which aws
 # /usr/local/bin/aws
 ```
 
----
-
 ## AWS CDK
-
 ```bash
 npm install -g aws-cdk
-
-# インストール
-cd /home/ubuntu/CEDIX/infrastructure/cdk
-npm install
 ```
 
+## Git Clone
+```
+git clone https://github.com/aws-samples/sample-camera-edge-data-intelligence-transformation-with-bedrock/tree/dev?tab=readme-ov-file
+```

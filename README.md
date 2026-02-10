@@ -13,6 +13,8 @@
 
 ## Architecture
 ![1770573228433.png](doc/image/1770573228433.png)
+- アーキテクチャ補足
+  - 本アーキテクチャは新しい映像プロトコルのカメラが追加されても容易に拡張していけることを想定して設計しています。そのため、特定プロトコルしか使わないことが確定しているケースなどではやや冗長です。そのような場合、ぜひAWSにご相談ください。
 
 ## Key Feature
 | 課題 | 解決策 |
@@ -70,6 +72,7 @@
 #### RTMPカメラの要件
 - コーデックは H.264のみ。解像度上限、フレームレート、ビットレート上限は Kiniesis Video Streamに依存。論理値としては、解像度4K、最大フレームレート60fps、最大ビットレート100Mbpsとなります (2026-2-10時点)が、現実的には映像を処理するCamera Mangement の ECSサービスのスペックに依存します。音声は現状破棄されます。
 - Collectorでレコーダー機能を使う場合、レコーダーを動作させるECSサービスのメモリの問題により、現状は解像度は720p程度までしか対応出来ません。より高解像度の映像の画像/動画切り出しをする場合はメモリを増加してください。
+- 配信開始してから接続までに初回は1-3分かかることがあります。
 
 #### RTSPカメラの要件
 - コーデックは H.264のみ。解像度上限、フレームレート、ビットレート上限は Kiniesis Video Streamに依存。論理値としては、解像度4K、最大フレームレート60fps、最大ビットレート100Mbpsとなります (2026-2-10時点)が、現実的には映像を処理するCamera Mangement の ECSサービスのスペックに依存します。音声は現状破棄されます。
@@ -112,7 +115,7 @@
 | タイプ | 機能 | Collector名 | 実行環境 | 説明 | 発生するイベント |
 | --- | --- | --- | --- | --- | --- |
 | HLS | レコーダー機能 | **hlsrec** | ECS | HLSストリームから画像/動画キャプチャ | `save_image`  `save_video` |
-| HLS | リアルタイムYolo検出機能<br> | **hlsyolo** | ECS | YOLOv9(MIT)リアルタイム物体検出 + ByteTrack追跡 | `class_detect` `area_detect`<br> |
+| HLS | リアルタイムYolo検出機能<br> | **hlsyolo** | ECS | YOLOv9(MIT)リアルタイム物体検出 + 指定ポリゴン領域への侵入/退出検知 | `class_detect` `area_detect`<br> |
 | S3 | レコーダー機能	<br> | **s3rec** | EventBridge + Lambda | S3からメディア収集 | `save_image`  `save_video` |
 | S3 | リアルタイムYolo検出機能<br> | **s3yolo** | EventBridge + Lambda | YOLOv9(MIT)物体検出 | `class_detect` <br> |
 
@@ -240,6 +243,7 @@ CEDIX/
 - OS
   - macOS Monterey 以降
   - Ubuntu 24.04 LTS (on EC2)
+    - [Ubuntuセットアップ資料](doc/README_Ubuntu_INSTALL.md)
 - メモリ
   - 16GB以上推奨
 
