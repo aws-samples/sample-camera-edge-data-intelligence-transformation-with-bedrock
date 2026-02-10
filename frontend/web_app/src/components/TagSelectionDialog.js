@@ -14,9 +14,11 @@ import {
   Box,
   Paper
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { getTagCategories, getTags } from '../services/api';
 
 const TagSelectionDialog = ({ open, onClose, onTagSelect }) => {
+  const { t } = useTranslation(['dialogs', 'common']);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [tags, setTags] = useState([]);
@@ -94,14 +96,14 @@ const TagSelectionDialog = ({ open, onClose, onTagSelect }) => {
       fullWidth
       sx={{ '& .MuiDialog-paper': { height: '70vh' } }}
     >
-      <DialogTitle>タグ選択</DialogTitle>
+      <DialogTitle>{t('dialogs:tagSelection.title')}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ height: '100%' }}>
           {/* 左側: タグカテゴリ一覧 */}
           <Grid item xs={6}>
             <Paper sx={{ height: '100%', p: 2 }}>
               <Typography variant="h6" gutterBottom>
-                タグカテゴリ
+                {t('dialogs:tagSelection.tagCategory')}
               </Typography>
               <List sx={{ height: 'calc(100% - 40px)', overflow: 'auto' }}>
                 {categories.map((category) => (
@@ -122,7 +124,7 @@ const TagSelectionDialog = ({ open, onClose, onTagSelect }) => {
           <Grid item xs={6}>
             <Paper sx={{ height: '100%', p: 2 }}>
               <Typography variant="h6" gutterBottom>
-                タグ一覧
+                {t('dialogs:tagSelection.tagList')}
               </Typography>
               {selectedCategory ? (
                 <List sx={{ height: 'calc(100% - 40px)', overflow: 'auto' }}>
@@ -148,7 +150,7 @@ const TagSelectionDialog = ({ open, onClose, onTagSelect }) => {
                   justifyContent: 'center' 
                 }}>
                   <Typography color="text.secondary">
-                    タグカテゴリを選択してください
+                    {t('dialogs:tagSelection.selectCategoryPrompt')}
                   </Typography>
                 </Box>
               )}
@@ -157,13 +159,13 @@ const TagSelectionDialog = ({ open, onClose, onTagSelect }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>キャンセル</Button>
+        <Button onClick={handleClose}>{t('common:cancel')}</Button>
         <Button 
           onClick={handleAddTag} 
           variant="contained"
           disabled={!selectedTag}
         >
-          タグを追加
+          {t('dialogs:tagSelection.addTag')}
         </Button>
       </DialogActions>
     </Dialog>

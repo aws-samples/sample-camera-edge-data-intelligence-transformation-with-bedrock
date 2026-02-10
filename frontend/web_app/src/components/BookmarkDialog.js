@@ -112,13 +112,13 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <BookmarkIcon />
-          ブックマークに追加
+          {t('dialogs:bookmark.addToBookmark')}
         </Box>
       </DialogTitle>
       <DialogContent>
         {missingFields.length > 0 && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            ブックマークに必要な情報が不足しています: {missingFields.join(', ')}
+            {t('dialogs:bookmark.missingFields', { fields: missingFields.join(', ') })}
           </Alert>
         )}
         {error && (
@@ -134,24 +134,24 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
         {/* ファイル情報表示 */}
         <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
           <Typography variant="subtitle2" gutterBottom>
-            追加するファイル
+            {t('dialogs:bookmark.fileToAdd')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            コレクター: {bookmarkData?.collector} | 検知器: {bookmarkData?.detector}
+            {t('dialogs:bookmark.collector')}: {bookmarkData?.collector} | {t('dialogs:bookmark.detector')}: {bookmarkData?.detector}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            ファイルID: {bookmarkData?.file_id}
+            {t('dialogs:bookmark.fileId')}: {bookmarkData?.file_id}
           </Typography>
         </Paper>
         {/* 新規ブックマーク作成 */}
         <Paper sx={{ p: 2, mb: 3, border: '2px solid', borderColor: 'primary.main' }}>
           <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-            新規ブックマークを作成
+            {t('dialogs:bookmark.createNew')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
             <TextField
               fullWidth
-              label="ブックマーク名"
+              label={t('dialogs:bookmark.bookmarkName')}
               value={newBookmarkName}
               onChange={(e) => setNewBookmarkName(e.target.value)}
               disabled={isCreatingNew}
@@ -168,14 +168,14 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
               disabled={isCreatingNew || !newBookmarkName.trim()}
               sx={{ minWidth: 120 }}
             >
-              {isCreatingNew ? '作成中...' : '作成する'}
+              {isCreatingNew ? t('dialogs:bookmark.creating') : t('dialogs:bookmark.create')}
             </Button>
           </Box>
         </Paper>
         <Divider sx={{ my: 2 }} />
         {/* 既存ブックマーク一覧 */}
         <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          既存のブックマークに追加
+          {t('dialogs:bookmark.addToExisting')}
         </Typography>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -183,7 +183,7 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
           </Box>
         ) : bookmarks.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-            ブックマークがありません。新規作成してください。
+            {t('dialogs:bookmark.noBookmarks')}
           </Typography>
         ) : (
           <List sx={{ maxHeight: 300, overflow: 'auto' }}>
@@ -195,7 +195,7 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
                 >
                   <ListItemText
                     primary={bookmark.bookmark_name}
-                    secondary={`更新日時: ${bookmark.updatedate}`}
+                    secondary={`${t('dialogs:bookmark.updateDate')}: ${bookmark.updatedate}`}
                   />
                 </ListItemButton>
               </ListItem>
@@ -205,7 +205,7 @@ const BookmarkDialog = ({ open, onClose, bookmarkData = {}, onSuccess, ...rest }
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>
-          キャンセル
+          {t('common:cancel')}
         </Button>
       </DialogActions>
     </Dialog>

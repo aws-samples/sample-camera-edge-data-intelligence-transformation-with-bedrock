@@ -149,7 +149,34 @@
   "tagCategory": {
     "title": "Select Tag Category",
     "description": "Select a tag category to load",
-    "noCategories": "No tag categories available"
+    "noCategories": "No tag categories available",
+    "systemPrompt": "System Prompt",
+    "detectPrompt": "Detection Prompt",
+    "configured": "Configured",
+    "notConfigured": "Not Configured",
+    "load": "Load"
+  },
+  "tagSelection": {
+    "title": "Select Tag",
+    "tagCategory": "Tag Category",
+    "tagList": "Tag List",
+    "selectCategoryPrompt": "Please select a tag category",
+    "addTag": "Add Tag"
+  },
+  "bookmark": {
+    "addToBookmark": "Add to Bookmark",
+    "missingFields": "Missing required information for bookmark: {{fields}}",
+    "fileToAdd": "File to Add",
+    "collector": "Collector",
+    "detector": "Detector",
+    "fileId": "File ID",
+    "createNew": "Create New Bookmark",
+    "bookmarkName": "Bookmark Name",
+    "creating": "Creating...",
+    "create": "Create",
+    "addToExisting": "Add to Existing Bookmark",
+    "noBookmarks": "No bookmarks available. Please create a new one.",
+    "updateDate": "Updated"
   },
   "passwordChange": {
     "title": "Change Password",

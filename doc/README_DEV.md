@@ -323,4 +323,3 @@ cd infrastructure/testdata
 **機能**:
 - Tagのサンプルデータを作成
 - 開発・テスト用のデータセットアップ
-

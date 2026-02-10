@@ -134,7 +134,7 @@ const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
         const defaultFileType = getDefaultFileType(collectorMode);
         const defaultModel = defaultFileType === 'video' 
           ? 'apac.amazon.nova-pro-v1:0' 
-          : 'global.anthropic.claude-sonnet-4-20250514-v1:0';
+          : 'global.anthropic.claude-sonnet-4-5-20250929-v1:0';
         const defaultTriggerEvent = getDefaultTriggerEvent(defaultFileType);
         
         setFormData({
@@ -189,7 +189,7 @@ const DetectorDialog = ({ open, data, isEdit, tags, onSave, onClose }) => {
       return 'apac.amazon.nova-pro-v1:0';
     }
     // 画像の場合
-    return 'global.anthropic.claude-sonnet-4-20250514-v1:0';
+    return 'global.anthropic.claude-sonnet-4-5-20250929-v1:0';
   };
 
   const handleChange = (field, value) => {

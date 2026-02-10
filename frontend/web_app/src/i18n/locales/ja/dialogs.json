@@ -149,7 +149,34 @@
   "tagCategory": {
     "title": "タグカテゴリ選択",
     "description": "ロードするタグカテゴリを選択してください",
-    "noCategories": "タグカテゴリがありません"
+    "noCategories": "タグカテゴリがありません",
+    "systemPrompt": "システムプロンプト",
+    "detectPrompt": "検出プロンプト",
+    "configured": "設定済み",
+    "notConfigured": "未設定",
+    "load": "ロード"
+  },
+  "tagSelection": {
+    "title": "タグ選択",
+    "tagCategory": "タグカテゴリ",
+    "tagList": "タグ一覧",
+    "selectCategoryPrompt": "タグカテゴリを選択してください",
+    "addTag": "タグを追加"
+  },
+  "bookmark": {
+    "addToBookmark": "ブックマークに追加",
+    "missingFields": "ブックマークに必要な情報が不足しています: {{fields}}",
+    "fileToAdd": "追加するファイル",
+    "collector": "コレクター",
+    "detector": "検知器",
+    "fileId": "ファイルID",
+    "createNew": "新規ブックマークを作成",
+    "bookmarkName": "ブックマーク名",
+    "creating": "作成中...",
+    "create": "作成する",
+    "addToExisting": "既存のブックマークに追加",
+    "noBookmarks": "ブックマークがありません。新規作成してください。",
+    "updateDate": "更新日時"
   },
   "passwordChange": {
     "title": "パスワード変更",

@@ -4,6 +4,14 @@
 このサンプルは、監視カメラの映像をリアルタイムにAWSに取り込み、生成AIによって映像解析するプラットフォームの実装サンプルです。
 建設現場、工場、物流センター、店舗などで利用されるカメラ映像を、クラウド上で統合管理し、生成AI（Amazon Bedrock）とコンピュータビジョン（YOLOv9）を組み合わせて自動解析するシステムを、すぐにデプロイして試せる形で提供しています。
 
+本サンプルは以下の展示会にて、建設不動産チームとしてブース展示させて頂いたものの公開版となります。
+- AWS Summit Japan 2025
+- JAPAN BUILD TOKYO 建設DX展 2025
+- 建設RXコンソーシアム Exhibition2025
+関連ブログ：
+[https://aws.amazon.com/jp/blogs/news/japan-build-tokyo-cre-booth-and-sessions/](https://aws.amazon.com/jp/blogs/news/japan-build-tokyo-cre-booth-and-sessions/)
+[https://aws.amazon.com/jp/blogs/news/aws-summit-2025-japan-cre-booth-and-sessions/](https://aws.amazon.com/jp/blogs/news/aws-summit-2025-japan-cre-booth-and-sessions/)
+
 ## Use Case
 本サンプルを拡張させることで、以下のようなユースケースに対応可能です。
 - **建設現場の安全監視**: ヘルメット未着用、立入禁止区域侵入の自動検知
@@ -266,6 +274,7 @@ cd ../../../
 ```bash
 cd infrastructure/cdk
 cp cdk.config.json.template cdk.config.json
+
 ```
 
 `cdk.config.json` を編集:
@@ -281,11 +290,14 @@ cp cdk.config.json.template cdk.config.json
 | --- | --- | --- | --- |
 | `stackPrefix` | ✅ | CloudFormationスタック名のプレフィックス。全AWSリソース名に使用されます。環境ごとに異なる値を設定してください。 | `cedix-dev`, `cedix-prod` |
 | `region` | ✅ | デプロイ先のAWSリージョン。Bedrockが利用可能なリージョンを指定してください。 | `ap-northeast-1`, `us-east-1` |
-| `s3AdditionalPrefix` | ✅ | S3バケット名のグローバル一意性を確保するためのプレフィックス。組織名や日付など、他と重複しない値を設定してください。 | `mycompany-2025`, `project-abc` |
+| `s3AdditionalPrefix` | ✅ | S3バケット名のグローバル一意性を確保するためのプレフィックス。組織名や日付など、他と重複しない値を設定してください。半角英数。 | `mycompany-2025`, `project-abc` |
 
 #### ステップ3: CDK Bootstrap
 ```bash
 cdk bootstrap
+
+## ↑で ts-node not foundなどでる場合は、↓を実行してから再度お願いします
+npm install
 ```
 
 #### ステップ4: CloudFront署名キーの作成
@@ -320,13 +332,18 @@ Webアプリケーションのデプロイ:
 ```bash
 cd infrastructure/testdata
 ./start.sh --lang ja
+
+# Ubuntu/EC2環境の場合（IAMロール使用）
+./start.sh --ubuntu --lang ja
 ```
 
 #### ステップ7: ログイン設定
 CEDIXはCognitoにて認証をするため、ユーザー作成が必要です。
-1. AWS Console → Cognito → ユーザープール → ユーザーを作成
-2. CloudFront URL にアクセス
-3. 作成したユーザーでログイン
+1. AWS Console にログイン → Cognito で検索 → ユーザープールを選択 (`<stackPrefix>-user-pool`)
+2. サイドバーの ユーザー管理 > ユーザーを選択
+3. ユーザーを作成をクリックして、ユーザーを作成
+4. CloudFront URL にアクセス
+5. 作成したユーザーでログイン
 
 ## Cleanup
 以下のコマンドでデプロイしたリソースのクリーンナップが可能です。
@@ -335,6 +352,10 @@ cd infrastructure/cdk
 ./cleanup_resources.sh
 ```
 **注意**: このスクリプトは全リソースを削除します。本番環境では慎重に使用してください。
+
+### Quick Setup
+以下のドキュメントをご確認ください
+[RTSPカメラのQuick Setup](doc/QUICK_START_RTSP.md)
 
 ## 関連ドキュメント
 ### 技術ドキュメント

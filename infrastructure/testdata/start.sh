@@ -12,6 +12,9 @@ cd "$SCRIPT_DIR"
 # デフォルト言語
 export LANG="ja"
 
+# デフォルトのdocker-composeファイル
+COMPOSE_FILE="docker-compose.yml"
+
 # 引数の解析
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -27,9 +30,13 @@ while [[ $# -gt 0 ]]; do
             BUILD_NO_CACHE_FLAG="true"
             shift
             ;;
+        --ubuntu)
+            COMPOSE_FILE="docker-compose-ubuntu.yml"
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--lang ja|en] [--build] [--build-no-cache]"
+            echo "Usage: $0 [--lang ja|en] [--build] [--build-no-cache] [--ubuntu]"
             exit 1
             ;;
     esac
@@ -55,6 +62,7 @@ fi
 
 echo "取得したAWSリージョン: $AWS_REGION"
 echo "スタックプレフィックス: $STACK_PREFIX"
+echo "使用するComposeファイル: $COMPOSE_FILE"
 
 # AWS認証情報を環境変数にエクスポート（一時的な認証情報がある場合）
 export AWS_REGION
@@ -63,12 +71,12 @@ export STACK_PREFIX
 # オプションに応じた処理
 if [[ "$BUILD_NO_CACHE_FLAG" == "true" ]]; then
     echo "Building with no-cache..."
-    docker compose build --no-cache
-    docker compose run --rm testdata
+    docker compose -f "$COMPOSE_FILE" build --no-cache
+    docker compose -f "$COMPOSE_FILE" run --rm testdata
 elif [[ -n "$BUILD_FLAG" ]]; then
     echo "Building..."
-    docker compose up --build
+    docker compose -f "$COMPOSE_FILE" up --build
 else
     echo "Running with existing image..."
-    docker compose run --rm testdata
+    docker compose -f "$COMPOSE_FILE" run --rm testdata
 fi

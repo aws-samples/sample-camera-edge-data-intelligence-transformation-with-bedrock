@@ -13,9 +13,11 @@ import {
   Typography,
   CircularProgress
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { getTagCategories } from '../services/api';
 
 const TagCategorySelectionDialog = ({ open, onClose, onCategorySelect }) => {
+  const { t } = useTranslation(['dialogs', 'common']);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +65,7 @@ const TagCategorySelectionDialog = ({ open, onClose, onCategorySelect }) => {
       fullWidth
       sx={{ '& .MuiDialog-paper': { height: '60vh' } }}
     >
-      <DialogTitle>タグカテゴリ選択</DialogTitle>
+      <DialogTitle>{t('dialogs:tagCategory.title')}</DialogTitle>
       <DialogContent>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -72,7 +74,7 @@ const TagCategorySelectionDialog = ({ open, onClose, onCategorySelect }) => {
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              ロードするタグカテゴリを選択してください
+              {t('dialogs:tagCategory.description')}
             </Typography>
             <List sx={{ height: 'calc(100% - 60px)', overflow: 'auto' }}>
               {categories.map((category) => (
@@ -83,7 +85,7 @@ const TagCategorySelectionDialog = ({ open, onClose, onCategorySelect }) => {
                   >
                     <ListItemText 
                       primary={category.tagcategory_name}
-                      secondary={`システムプロンプト: ${category.system_prompt ? '設定済み' : '未設定'} | 検出プロンプト: ${category.detect_prompt ? '設定済み' : '未設定'}`}
+                      secondary={`${t('dialogs:tagCategory.systemPrompt')}: ${category.system_prompt ? t('dialogs:tagCategory.configured') : t('dialogs:tagCategory.notConfigured')} | ${t('dialogs:tagCategory.detectPrompt')}: ${category.detect_prompt ? t('dialogs:tagCategory.configured') : t('dialogs:tagCategory.notConfigured')}`}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -93,13 +95,13 @@ const TagCategorySelectionDialog = ({ open, onClose, onCategorySelect }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>キャンセル</Button>
+        <Button onClick={handleClose}>{t('common:cancel')}</Button>
         <Button 
           onClick={handleLoadCategory} 
           variant="contained"
           disabled={!selectedCategory}
         >
-          ロード
+          {t('dialogs:tagCategory.load')}
         </Button>
       </DialogActions>
     </Dialog>

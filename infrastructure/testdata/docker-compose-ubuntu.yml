@@ -1,0 +1,12 @@
+services:
+  testdata:
+    build:
+      context: ../..
+      dockerfile: infrastructure/testdata/Dockerfile
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - STACK_PREFIX=${STACK_PREFIX}
+    network_mode: host
+    command: ["--lang", "${LANG:-ja}"]
