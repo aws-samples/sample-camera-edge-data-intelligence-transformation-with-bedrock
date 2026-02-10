@@ -91,55 +91,10 @@ infrastructure/cdk/
 | **KvsBaseEcrStack** | `kvs-base-ecr-stack.ts` | KVS SDK + GStreamerベースイメージ |
 | **RtmpServerEcrStack** | `rtmp-server-ecr-stack.ts` | RTMPサーバーコンテナ（Go） |
 
----
-
-## FoundationStackで作成される主要リソース
-
-### DynamoDB 15テーブル
-
-| テーブル名 | 用途 |
-| --- | --- |
-| `cedix-place` | 現場管理 |
-| `cedix-camera` | カメラ管理 |
-| `cedix-collector` | コレクター管理 |
-| `cedix-detector` | 検出器管理 |
-| `cedix-file` | ファイル管理 |
-| `cedix-detect-log` | 検出ログ |
-| `cedix-detect-log-tag` | 検出ログタグ |
-| `cedix-detect-tag-timeseries` | タグ時系列データ |
-| `cedix-bookmark` | ブックマーク |
-| `cedix-bookmark-detail` | ブックマーク詳細 |
-| `cedix-tag-category` | タグカテゴリ |
-| `cedix-tag` | タグ |
-| `cedix-track-log` | トラッキングログ |
-| `cedix-test-movie` | テスト動画 |
-| `cedix-rtmp-nlb` | RTMP NLB管理 |
-
-### S3 3バケット
-
-| バケット | 用途 |
-| --- | --- |
-| Camera用バケット | 映像・画像保存 |
-| WebApp用バケット | フロントエンド配信 |
-| ZeroETL用バケット | データ連携 |
-
-### その他のリソース
-
-| リソース | 詳細 |
-| --- | --- |
-| VPC | 10.0.0.0/16、2AZ、NAT Gateway 1台 |
-| VPCエンドポイント | S3、DynamoDB |
-| Cognito | UserPool、UserPoolClient、IdentityPool |
-| ECS | Cluster、TaskRole、TaskExecutionRole、SecurityGroup |
-| KMS | CloudWatch Logs暗号化キー |
-| SSM Parameters | 各種設定値の永続化 |
-
----
 
 ## デプロイ依存関係
 
 ### 依存関係図
-
 ```
 CloudFrontKeysStack (独立)
         ↓
@@ -184,15 +139,12 @@ ECRスタック群 (独立、並列デプロイ可能)
 ## デプロイ手順
 
 ### 設定ファイル
-
 `cdk.config.json` を作成:
-
 ```bash
 cp cdk.config.json.template cdk.config.json
 ```
 
 設定内容:
-
 ```json
 {
   "stackPrefix": "cedix-dev",
@@ -208,7 +160,6 @@ cp cdk.config.json.template cdk.config.json
 | `s3AdditionalPrefix` | S3バケット名のグローバル一意性を確保するための追加プレフィックス | ✅ |
 
 ### 全リソース一括デプロイ
-
 ```bash
 cd infrastructure/cdk
 
@@ -224,6 +175,12 @@ sudo rm -rf keys/
 
 # Webアプリケーションのデプロイ
 ./run-cdk-webapp.sh deploy --all
+```
+
+確認メッセージをスキップ
+```bash
+./run-cdk.sh deploy --all --require-approval never
+./run-cdk-webapp.sh deploy --all --require-approval never
 ```
 
 ### 個別デプロイ (全リソース一括デプロイに失敗する場合)
@@ -269,19 +226,10 @@ cdk bootstrap
 ```
 
 ### スタック一覧の確認
-
 ```bash
 ./run-cdk.sh list
 ```
 
-### 確認メッセージをスキップ
-
-```bash
-./run-cdk.sh deploy --all --require-approval never
-./run-cdk-webapp.sh deploy --all --require-approval never
-```
-
----
 
 ## トラブルシューティング
 
@@ -297,12 +245,9 @@ cdk bootstrap
 
 **注意**: このスクリプトは全リソースを削除します。本番環境では慎重に使用してください。
 
----
-
 ## 特記事項
 
 1. **循環依存回避**: L1 Construct（CfnDistribution等）とCustom Resourceを活用
 2. **デグレ防止**: SSM Parameterへの永続化 + Custom Resourceによる即時更新のハイブリッド
 3. **KVS Base依存**: `rtmp-server-ecr`は`kvs-base-ecr`のSSM Parameterが存在する場合のみ作成
 4. **WebAppは別アプリ**: CloudFormation Outputの値解決後にビルドするため`cdk-webapp.ts`で分離
-

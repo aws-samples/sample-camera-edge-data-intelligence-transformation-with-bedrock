@@ -1,7 +1,7 @@
 # Quick Start S3 for Camera
 本ドキュメントではS3 用のカメラエンドポイントのセットアップに限定して記載します。基本的な説明は、RTSPカメラのQuickStetup資料にてご確認ください。本資料は、S3 の場合の差分のみを記載します。
 
-[QuickSetup RTSPカメラ](doc/QUICK_START_RTSP.md)
+[Quick Start RTSPカメラ](./QUICK_START_RTSP.md)
 
 ### Camera 用のS3エンドポイントを作成する
 ![1770718062061.png](image/1770718062061.png)

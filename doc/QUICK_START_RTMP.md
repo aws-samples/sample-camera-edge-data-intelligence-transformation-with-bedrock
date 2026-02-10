@@ -1,7 +1,7 @@
 # Quick Start RTMP Camera
-本ドキュメントではRTMP のカメラからのセットアップに限定して記載します。カメラ以外の操作は全て RTSP Cameraと一緒ですので、そちらをご確認お願い致します。
+本ドキュメントではRTMP のカメラからのセットアップに限定して記載します。カメラ以外の操作は全て RTSP カメラと一緒ですので、そちらをご確認お願い致します。
 
-[QuickSetup RTSPカメラ](doc/QUICK_START_RTSP.md)
+[Quick Start RTSPカメラ](./QUICK_START_RTSP.md)
 
 ### Camera と接続する
 カメラ画面にて、CONNECT CAMERAをクリック![1770694215288.png](image/1770694215288.png)
@@ -22,4 +22,4 @@ RTMP URLと、Stream Key を指定する欄があると思いますので、RTMP
 なお、初回は 1-3分ほど表示までに時間がかかることがあります。LIVE画面を再描画しながらご確認お願いします。接続後は、低レイテンシでの配信が可能です。
 ![image/1770726243225.png](image/1770726243225.png)
 
-### 
+###

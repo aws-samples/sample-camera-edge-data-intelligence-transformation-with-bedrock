@@ -53,7 +53,14 @@ aws configure
 
 
 ## 開発環境の確認
-### 1. CDK設定の確認
+### 1. 開発環境
+開発環境については 現状は Macでのみ動作確認をしています。
+- OS
+  - macOS Monterey 以降
+- メモリ
+  - 16GB以上推奨
+
+### 2. CDK設定の確認
 ローカル開発では、デプロイ済みのAWSリソースから設定を自動取得します。デプロイ時に設定済みなはずですが、 `cdk.config.json` は重要です。
 **cdk.config.json 設定例**:
 ```json
@@ -64,20 +71,8 @@ aws configure
 }
 ```
 
-### 2. 各Docker起動用の start.sh について
+### 3. 各Docker起動用の start.sh について
 ローカル開発は、各サービスの`start.sh`スクリプトを利用して行ってください。
-各サービスの`start.sh`スクリプトはローカル開発用のDockerを起動しますが、その際に、Deploy済みのCloudFormationスタックからDockerで利用する各種情報を自動取得します。以下のその例です：
-- Cognito User Pool ID / Client ID
-- CloudFront Domain / Key Pair ID
-- S3 Bucket Name
-- OpenSearch Serverless Endpoint
-- その他のAWSリソース情報
-
----
-
-## ローカル開発環境の起動
-### 起動コマンドの共通パターン
-全てのサービスで共通の起動スクリプト`start.sh`を使用します。
 ```bash
 # 通常起動（既存のコンテナイメージを使用）
 ./start.sh
@@ -89,14 +84,13 @@ aws configure
 ./start.sh --build-no-cache
 ```
 
-### 起動オプション
+起動オプション
 | オプション | 説明 | 使用タイミング |
 | --- | --- | --- |
 | なし | 既存のコンテナイメージで起動 | 通常の開発時 |
 | `--build` | コードをビルドしてから起動 | コード変更後 |
 | `--build-no-cache` | キャッシュなしでビルドして起動 | requirements.txt変更後、依存関係追加時 |
 
----
 
 ## 各サービスの起動方法
 ### 1. API Gateway（統合APIサーバー）

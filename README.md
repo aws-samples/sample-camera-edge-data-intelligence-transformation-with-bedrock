@@ -360,6 +360,7 @@ cd infrastructure/cdk
 | [APIエンドポイント一覧](doc/API_ENDPOINTS.md) | 全エンドポイントの一覧 |
 | [CDK構成ガイド](doc/CDK_ARCHITECTURE.md) | 16スタックの詳細と依存関係 |
 | [開発者向けガイド](doc/README_DEV.md) | 開発環境のセットアップと開発フロー |
+| [データベース設計書](doc/database-design.md)<br> | データベース設計書 |
 
 ## CONTRIBUTING
 本プロジェクトへの質問や改善提案の詳細は、[CONTRIBUTING](CONTRIBUTING.md) をご確認ください
