@@ -117,7 +117,7 @@ export RTSP_URL="rtsps://192.168.1.100:8322/stream"
 
 ---
 
-### Step 4: RTSP Receiver を起動する
+### RTSP Receiver を起動する
 
 #### 初回起動（ビルドが必要）
 ```bash

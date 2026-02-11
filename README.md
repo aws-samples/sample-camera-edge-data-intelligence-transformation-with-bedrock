@@ -69,14 +69,14 @@
   - そのS3パスに画像/動画を送信すれば、バックエンドのS3コレクターが時系列で保存・管理します。また、そのタイミングにて YOLOv9(MITライセンス版)での解析や、Amazon Bedrockによる解析も実施可能です。
 
 #### 接続パターン:
-| タイプ | ソース | 映像の収集方法 | 変換後の映像エンドポイント |
-| --- | --- | --- | --- |
-| RTSP | RTSPカメラ | 現場設置のRTSPクライアント(Docker)が同一ネットワーク上のRTSPカメラに接続してRTSP映像を取得してKVSに送信 | KVS (HLS) |
-| RTSP | RTSPカメラ | AWS側から現場RTSPカメラに直接接続してRTSP映像を取得してKVSに送信 | KVS (HLS) |
-| RTMP | RTMPカメラ | AWS側で公開される RTMPエンドポイントに、現場RTMPカメラから接続して映像送信。それがKVSに変換される。<br> | KVS (HLS)<br> |
-| VSaaS | クラウドカメラ | VSaaS が提供しているAPI(HLSエンドポイントを取得する) をそのまま無変換で利用<br> | VSaaS(HLS) |
-| KVS直接 | 組込カメラ(例) | 送信元の実装により、直接KVSに映像を送信する | KVS (HLS) |
-| S3 | 組込カメラ(例) | 送信元の実装により、直接S3に映像(動画/画像)を送信する	<br> | S3 Bucket (File) |
+| タイプ | ソース | 映像の収集方法 | 変換後の映像エンドポイント | Quick Start |
+| --- | --- | --- | --- | --- |
+| RTSP | RTSPカメラ | 現場設置のRTSPクライアント(Docker)が同一ネットワーク上のRTSPカメラに接続してRTSP映像を取得してKVSに送信 | KVS (HLS) | [RTSP(ローカル)](doc/QUICK_START_RTSP_LOCAL.md) |
+| RTSP | RTSPカメラ | AWS側から現場RTSPカメラに直接接続してRTSP映像を取得してKVSに送信 | KVS (HLS) | [RTSP](doc/QUICK_START_RTSP.md) |
+| RTMP | RTMPカメラ | AWS側で公開される RTMPエンドポイントに、現場RTMPカメラから接続して映像送信。それがKVSに変換される。 | KVS (HLS) | [RTMP](doc/QUICK_START_RTMP.md) |
+| VSaaS | クラウドカメラ | VSaaS が提供しているAPI(HLSエンドポイントを取得する) をそのまま無変換で利用 | VSaaS(HLS) | - |
+| KVS直接 | 組込カメラ(例) | 送信元の実装により、直接KVSに映像を送信する | KVS (HLS) | - |
+| S3 | 組込カメラ(例) | 送信元の実装により、直接S3に映像(動画/画像)を送信する | S3 Bucket (File) | [S3](doc/QUICK_START_S3.md) |
 
 #### RTMPカメラの要件
 - コーデックは H.264のみ。解像度上限、フレームレート、ビットレート上限は Kinesis Video Streamsに依存。論理値としては、解像度4K、最大フレームレート60fps、最大ビットレート100Mbpsとなります (2026-2-10時点)が、現実的には映像を処理するCamera Mangement の ECSサービスのスペックに依存します。音声は現状破棄されます。
@@ -357,6 +357,7 @@ cd infrastructure/cdk
 以下のドキュメントをご確認ください
 
 - [Quick Start RTSPカメラ](doc/QUICK_START_RTSP.md)
+- [Quick Start RTSPカメラ（ローカルネットワーク経由）](doc/QUICK_START_RTSP_LOCAL.md)
 - [Quick Start RTMPカメラ](doc/QUICK_START_RTMP.md)
 - [Quick Start S3カメラ](doc/QUICK_START_S3.md)
 
