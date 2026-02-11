@@ -49,40 +49,33 @@ Dockerが動けばどのOSでも問題ありませんが、Windowsでは start.s
 ### Camera を作成する（KVSエンドポイント
 カメラ画面にて、CONNECT CAMERA をクリックします。
 ![カメラ接続](image/1770694215288.png)
-
-SAVE ボタンを押すと、カメラ作成が開始されます。CloudFormation でのデプロイのため、完了まで数分かかります。
-
-<!-- ![KVSカメラ作成](image/placeholder_kvs_camera_create.png) -->
-
-作成が完了すると、**Stream Name** が生成されます。この値を**必ずコピー**してください。
-
-<!-- ![Stream Name確認](image/placeholder_stream_name.png) -->
-
+名前と場所を入れて、タイプにて Kinesis を選択してSAVEボタンを押す。カメラ作成中のメッセージがでるため完了するまで待機する。CloudFormation でのデプロイのため一定時間かかります。
+※ RTSP Reciverはローカルでセットアップするので、AWS側で必要なのは Kinesis Video Streams のエンドポイントとなります。そのため、Kinesisだけを作成します![image/1770823956482.png](image/1770823956482.png)
+作成が完了すると、**Kinesis Stream ARN **が生成されます。この値を**必ずコピー**してください。ただ、必要なのは ARN の内、「**Stream Name**」の部分のみとなります
+arn:aws:kinesisvideo:<regnion>:<account>:stream/<cameraid>-stream/<strem_name>
+の <strem_name> の部分だけあれば十分です
+![image/1770824243126.png](image/1770824243126.png)
 > 📝 **重要**: Stream Name は後の手順で RTSP Receiver の設定に使用します。
 
 ---
 
-### Step 3: RTSP Receiver をセットアップする
-
+### RTSP Receiver をセットアップする
 ローカルPCで以下の手順を実行します。
 
-#### 3-1. リポジトリをクローン（まだの場合）
-
+#### リポジトリをクローン（まだの場合）
 ```bash
 git clone https://github.com/your-org/sample-camera-edge-data-intelligence-transformation-with-bedrock.git
 cd sample-camera-edge-data-intelligence-transformation-with-bedrock
 ```
 
-#### 3-2. RTSP Receiver ディレクトリに移動
-
+#### RTSP Receiver ディレクトリに移動
 ```bash
 cd backend/camera_management/docker/rtsp_reciver
 ```
 
-#### 3-3. 環境変数ファイル (.env) を作成
-
+#### 環境変数ファイル (.env) を作成
 `.env` ファイルを作成し、AWS認証情報を設定します。
-
+なお、**本設定は長期クレデンシャルを利用しており、あくまでテスト用の設定だとご理解ください。**
 ```bash
 # .env ファイルを作成
 cat << 'EOF' > .env
@@ -90,32 +83,27 @@ AWS_ACCESS_KEY_ID=<your-access-key-id>
 AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
 EOF
 ```
-
 > ⚠️ **セキュリティ注意**: `.env` ファイルは `.gitignore` に含まれていますが、認証情報の取り扱いには十分注意してください。
 
-#### 3-4. start.sh を編集
-
+#### start.sh を編集
 `start.sh` を開き、以下の環境変数を設定します。
-
 ```bash
 # ========================================
 # 0. 環境変数の設定
 # ========================================
-export STREAM_NAME="<Step 2でコピーしたStream Name>"
+export STREAM_NAME="<コピーした Stream Name>"
 export RTSP_URL="rtsp://<RTSPカメラのIPアドレス>:<ポート>/<パス>"
 export GSTREAMER_LOG_MODE="stdout"  # デバッグ時は stdout、本番は null
 ```
 
 **設定例:**
-
 | 変数 | 説明 | 例 |
 | --- | --- | --- |
-| `STREAM_NAME` | CEDIXで作成したKVSストリーム名 | `place-00001-entrance-stream` |
+| `STREAM_NAME` | CEDIXで作成したKVSストリーム名 | `1770523904461` |
 | `RTSP_URL` | RTSPカメラのURL | `rtsp://192.168.1.100:554/stream1` |
 | `GSTREAMER_LOG_MODE` | ログ出力モード | `stdout` または `null` |
 
 **RTSPカメラURL形式の例:**
-
 ```bash
 # 一般的なRTSPカメラ
 export RTSP_URL="rtsp://192.168.1.100:554/stream1"
@@ -132,23 +120,18 @@ export RTSP_URL="rtsps://192.168.1.100:8322/stream"
 ### Step 4: RTSP Receiver を起動する
 
 #### 初回起動（ビルドが必要）
-
 ```bash
 ./start.sh --build
 ```
-
 > ⏱️ **注意**: 初回ビルドは KVS Producer SDK のコンパイルを含むため、**15〜30分**かかります。2回目以降はキャッシュが使用されるため高速です。
 
 #### 2回目以降の起動
-
 ```bash
 ./start.sh
 ```
 
 #### 起動確認
-
 正常に起動すると、以下のようなログが表示されます：
-
 ```
 ==========================================
 RTSP Receiver 起動スクリプト (開発環境)
@@ -179,12 +162,8 @@ GStreamerパイプラインを起動中...
 
 ---
 
-### Step 5: CEDIX で映像を確認する
-
-CEDIXのカメラ画面で、作成したカメラをクリックします。
-
+### Webで映像を確認する
+カメラ画面で、先程作成したカメラをクリックします。
 LIVE タブに映像が表示されていれば接続成功です。
-
-<!-- ![LIVE画面](image/1770713854778.png) -->
-
+![image/1770824774635.png](image/1770824774635.png)
 > 📝 **注意**: 初回接続時は映像表示まで1〜2分かかる場合があります。LIVE画面を再読み込みしながら確認してください。
