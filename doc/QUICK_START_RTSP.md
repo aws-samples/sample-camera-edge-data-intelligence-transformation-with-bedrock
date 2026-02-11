@@ -1,6 +1,8 @@
 # Quick Start RTSP Camera
 本ドキュメントでは RTSP のカメラからの映像取り込み、およびAIによる映像解析までのセットアップ、その検出結果の分析までの一連のセットアップ手順を記載します。
 
+なお、本セットアップは、「AWSからRTSPカメラに直接ネットワーク的に接続可能なケース」のセットアップを想定しています。backend/camera_management/docker/rtsp_reciver
+
 ### Place を作成する
 ヘッダーの場所をクリック。ADD ボタンを押します
 ![1770694015828.png](image/1770694015828.png)
