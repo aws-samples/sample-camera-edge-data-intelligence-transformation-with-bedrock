@@ -8,6 +8,7 @@ import re
 from pydantic import BaseModel
 import uuid
 import json
+import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from shared.common import *
 from shared.url_generator import generate_presigned_url
@@ -138,22 +139,51 @@ def validate_vsaas_fields(camera_data: dict):
 def validate_kinesis_stream(camera_data: dict):
     """
     Validate Kinesis stream configuration
+    
+    Note: kinesis_streamarnは任意。未入力の場合は自動作成される。
+    RTSP/RTMPエンドポイントの場合はCloudFormationで作成、
+    それ以外の場合はboto3で直接作成する。
     """
-    camera_type = camera_data.get('type')
-    if camera_type != 'kinesis':
-        return  # No validation needed for other types
+    # バリデーションは不要（自動作成するため）
+    pass
+
+
+def create_kinesis_video_stream(camera_id: str, retention_period: str = '24') -> str:
+    """
+    Kinesis Video Streamを作成（boto3で直接作成）
     
-    camera_endpoint = camera_data.get('camera_endpoint')
+    camera_endpoint が空/none で kinesis_streamarn が未入力の場合に使用。
+    RTSP/RTMPの場合はCloudFormationで作成されるため、この関数は使用しない。
     
-    # camera_endpointがnone（または空）の場合、kinesis_streamarnが必須
-    if not camera_endpoint or camera_endpoint.strip() == '' or camera_endpoint == 'none':
-        kinesis_streamarn = (camera_data.get('kinesis_streamarn') or '').strip()
-        
-        if not kinesis_streamarn:
-            raise HTTPException(
-                status_code=400,
-                detail="Kinesisカメラでカメラエンドポイントが未設定の場合、Kinesis Stream ARNは必須です。"
-            )
+    Args:
+        camera_id: カメラID
+        retention_period: 保持期間（時間）
+    
+    Returns:
+        作成されたKVSのARN
+    """
+    kvs_client = boto3.client('kinesisvideo', region_name=REGION)
+    stream_name = f"{camera_id}-stream"
+    
+    try:
+        response = kvs_client.create_stream(
+            StreamName=stream_name,
+            DataRetentionInHours=int(retention_period),
+            MediaType='video/h264',
+            Tags={
+                'CameraId': camera_id,
+                'Purpose': 'Camera-Stream',
+                'CreatedBy': 'CEDIX-API'
+            }
+        )
+        print(f"✅ Created Kinesis Video Stream: {stream_name}")
+        return response['StreamARN']
+    except kvs_client.exceptions.ResourceInUseException:
+        # 既に存在する場合はARNを取得
+        print(f"ℹ️ Kinesis Video Stream already exists: {stream_name}")
+        response = kvs_client.describe_stream(StreamName=stream_name)
+        return response['StreamInfo']['StreamARN']
+
 
 def validate_rtsp_endpoint(camera_data: dict):
     """
@@ -326,6 +356,30 @@ async def create_new_camera(camera: CameraCreate, user: dict = Depends(get_curre
         else:
             # RTSP/RTMP以外の場合は即座に完了
             deploy_status = 'deployed'
+            
+            # camera_endpoint が空/none で kinesis_streamarn が未入力の場合、KVSを自動作成
+            if camera_data.get('type') == 'kinesis':
+                kinesis_streamarn = (camera_data.get('kinesis_streamarn') or '').strip()
+                
+                if not kinesis_streamarn:
+                    # KVSを自動作成
+                    try:
+                        kvs_arn = create_kinesis_video_stream(
+                            camera_data['camera_id'],
+                            camera_data.get('retention_period', '24')
+                        )
+                        # DynamoDBを更新
+                        update_camera(camera_data['camera_id'], {
+                            'kinesis_streamarn': kvs_arn
+                        })
+                        camera_data['kinesis_streamarn'] = kvs_arn
+                        print(f"✅ Auto-created KVS for camera {camera_data['camera_id']}: {kvs_arn}")
+                    except Exception as e:
+                        print(f"Error creating KVS: {e}")
+                        raise HTTPException(
+                            status_code=500,
+                            detail=f"Kinesis Video Streamの作成に失敗しました: {str(e)}"
+                        )
         
         # 即座にレスポンス返却（CloudFormationの完了を待たない）
         return {

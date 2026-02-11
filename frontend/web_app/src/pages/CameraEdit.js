@@ -260,16 +260,9 @@ const CameraEdit = () => {
   };
 
   // Kinesis Streamのバリデーション
+  // Note: kinesis_streamarnは任意。未入力の場合はAPIで自動作成される
   const validateKinesisStream = () => {
-    if (camera.type === 'kinesis') {
-      const endpoint = camera.camera_endpoint;
-      // camera_endpointがnone（または空）の場合、kinesis_streamarnが必須
-      if (!endpoint || endpoint.trim() === '' || endpoint === 'none') {
-        if (!camera.kinesis_streamarn || camera.kinesis_streamarn.trim() === '') {
-          return 'カメラエンドポイントが未設定の場合、Kinesis Stream ARNは必須です。';
-        }
-      }
-    }
+    // バリデーション不要（自動作成するため）
     return null;
   };
 
@@ -322,6 +315,11 @@ const CameraEdit = () => {
         // 新規時はカメラIDを送信しない
         const cameraToSend = { ...camera };
         delete cameraToSend.camera_id;
+        
+        // camera_endpoint が 'none' の場合は空文字列に変換（APIは空文字列を期待）
+        if (cameraToSend.camera_endpoint === 'none') {
+          cameraToSend.camera_endpoint = '';
+        }
         
         // RTSPエンドポイントの場合、バリデーション
         if (camera.camera_endpoint === 'rtsp') {
@@ -779,12 +777,12 @@ const CameraEndpointSection = ({ camera, isNewCamera, onChange, onEndpointChange
         <FormControl fullWidth disabled={!isNewCamera}>
           <InputLabel>{t('pages:cameraEdit.endpoint')}</InputLabel>
           <Select
-            value={camera.camera_endpoint || ''}
+            value={camera.camera_endpoint || 'none'}
             onChange={(e) => onEndpointChange(e.target.value)}
             label={t('pages:cameraEdit.endpoint')}
             disabled={!isNewCamera}
           >
-            <MenuItem value="">{t('pages:cameraEdit.none')}</MenuItem>
+            <MenuItem value="none">{t('pages:cameraEdit.none')}</MenuItem>
             <MenuItem value="rtsp">RTSP</MenuItem>
             <MenuItem value="rtmp">RTMP</MenuItem>
           </Select>
