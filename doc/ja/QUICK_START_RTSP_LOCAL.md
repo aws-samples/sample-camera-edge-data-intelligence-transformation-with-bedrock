@@ -6,7 +6,7 @@
 
 基本的な操作（Collector、Detector、分析機能など）は RTSPカメラのQuick Startと同じですので、そちらもご確認ください。
 
-[Quick Start RTSPカメラ](./QUICK_START_RTSP.md)
+[Quick Start RTSPカメラ](QUICK_START_RTSP.md)
 
 ---
 
@@ -48,13 +48,13 @@ Dockerが動けばどのOSでも問題ありませんが、Windowsでは start.s
 ## セットアップ手順
 ### Camera を作成する（KVSエンドポイント
 カメラ画面にて、CONNECT CAMERA をクリックします。
-![カメラ接続](image/1770694215288.png)
+![カメラ接続](../image/1770694215288.png)
 名前と場所を入れて、タイプにて Kinesis を選択してSAVEボタンを押す。カメラ作成中のメッセージがでるため完了するまで待機する。CloudFormation でのデプロイのため一定時間かかります。
-※ RTSP Reciverはローカルでセットアップするので、AWS側で必要なのは Kinesis Video Streams のエンドポイントとなります。そのため、Kinesisだけを作成します![image/1770823956482.png](image/1770823956482.png)
+※ RTSP Reciverはローカルでセットアップするので、AWS側で必要なのは Kinesis Video Streams のエンドポイントとなります。そのため、Kinesisだけを作成します![image/1770823956482.png](../image/1770823956482.png)
 作成が完了すると、**Kinesis Stream ARN **が生成されます。この値を**必ずコピー**してください。ただ、必要なのは ARN の内、「**Stream Name**」の部分のみとなります
 arn:aws:kinesisvideo:<regnion>:<account>:stream/<cameraid>-stream/<strem_name>
 の <strem_name> の部分だけあれば十分です
-![image/1770824243126.png](image/1770824243126.png)
+![image/1770824243126.png](../image/1770824243126.png)
 > 📝 **重要**: Stream Name は後の手順で RTSP Receiver の設定に使用します。
 
 ---
@@ -165,5 +165,5 @@ GStreamerパイプラインを起動中...
 ### Webで映像を確認する
 カメラ画面で、先程作成したカメラをクリックします。
 LIVE タブに映像が表示されていれば接続成功です。
-![image/1770824774635.png](image/1770824774635.png)
+![image/1770824774635.png](../image/1770824774635.png)
 > 📝 **注意**: 初回接続時は映像表示まで1〜2分かかる場合があります。LIVE画面を再読み込みしながら確認してください。
